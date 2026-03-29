@@ -16,10 +16,10 @@ if st.button("Find Colleges"):
 
     data = response.json()
 
-    if data["count"] == 0:
+    if data['count'] == 0:
         st.warning("No colleges found with given data.")
     else:
-        st.success(f"Found {data["count"]} eligible colleges.")
+        st.success(f"Found {data['count']} eligible colleges.")
         for college in data["Eligible colleges"]:
             st.write(f"**{college['college']} - {college['branch']} ({college['cutoff_percentile']})")
 
