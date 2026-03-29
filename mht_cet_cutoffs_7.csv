@@ -1,0 +1,374 @@
+college,branch,category,cutoff_percentile,category_name
+COEP Technological University,Civil Engineering,GOPENS,95.6211259,General Open
+COEP Technological University,Civil Engineering,GSCS,92.4172762,General SC
+COEP Technological University,Civil Engineering,GSTS,96.5454743,General ST
+COEP Technological University,Civil Engineering,GOBCS,98.1869508,General OBC
+COEP Technological University,Civil Engineering,GSEBCS,98.0588604,General SEBC
+COEP Technological University,Civil Engineering,LOPENS,93.6678322,Ladies Open
+COEP Technological University,Civil Engineering,PWDOPENS,80.3575863,PWD Open
+COEP Technological University,Civil Engineering,TFWS,84.8811189,Tuition Fee Waiver
+COEP Technological University,Computer Science and Engineering,GOPENS,98.9197811,General Open
+COEP Technological University,Computer Science and Engineering,GSCS,95.830721,General SC
+COEP Technological University,Computer Science and Engineering,GSTS,99.3595406,General ST
+COEP Technological University,Computer Science and Engineering,GOBCS,99.7972248,General OBC
+COEP Technological University,Computer Science and Engineering,GSEBCS,99.901332,General SEBC
+COEP Technological University,Computer Science and Engineering,LOPENS,98.5995086,Ladies Open
+COEP Technological University,Computer Science and Engineering,PWDOPENS,83.4924535,PWD Open
+COEP Technological University,Computer Science and Engineering,TFWS,97.7946794,Tuition Fee Waiver
+COEP Technological University,Electrical Engineering,GOPENS,97.4161284,General Open
+COEP Technological University,Electrical Engineering,GSCS,89.2945239,General SC
+COEP Technological University,Electrical Engineering,GSTS,97.600319,General ST
+COEP Technological University,Electrical Engineering,GOBCS,99.1726706,General OBC
+COEP Technological University,Electrical Engineering,GSEBCS,99.3006993,General SEBC
+COEP Technological University,Electrical Engineering,LOPENS,96.684051,Ladies Open
+COEP Technological University,Electrical Engineering,PWDOPENS,72.6730266,PWD Open
+COEP Technological University,Electrical Engineering,TFWS,85.4112341,Tuition Fee Waiver
+COEP Technological University,Electronics and Telecommunication Engg,GOPENS,98.3580268,General Open
+COEP Technological University,Electronics and Telecommunication Engg,GSCS,94.434629,General SC
+COEP Technological University,Electronics and Telecommunication Engg,GSTS,98.9097204,General ST
+COEP Technological University,Electronics and Telecommunication Engg,GOBCS,99.5104535,General OBC
+COEP Technological University,Electronics and Telecommunication Engg,GSEBCS,99.6143295,General SEBC
+COEP Technological University,Electronics and Telecommunication Engg,LOPENS,97.1938598,Ladies Open
+COEP Technological University,Electronics and Telecommunication Engg,PWDOPENS,78.6137148,PWD Open
+COEP Technological University,Electronics and Telecommunication Engg,TFWS,94.3738279,Tuition Fee Waiver
+COEP Technological University,Instrumentation and Control Engineering,GOPENS,97.0921673,General Open
+COEP Technological University,Instrumentation and Control Engineering,GSCS,87.7787039,General SC
+COEP Technological University,Instrumentation and Control Engineering,GSTS,97.2146575,General ST
+COEP Technological University,Instrumentation and Control Engineering,GOBCS,98.8156946,General OBC
+COEP Technological University,Instrumentation and Control Engineering,GSEBCS,99.1082756,General SEBC
+COEP Technological University,Instrumentation and Control Engineering,LOPENS,96.5830721,Ladies Open
+COEP Technological University,Instrumentation and Control Engineering,PWDOPENS,98.2863114,PWD Open
+COEP Technological University,Instrumentation and Control Engineering,TFWS,74.5404987,Tuition Fee Waiver
+COEP Technological University,Mechanical Engineering,GOPENS,97.1832984,General Open
+COEP Technological University,Mechanical Engineering,GSCS,87.9466479,General SC
+COEP Technological University,Mechanical Engineering,GSTS,98.5609164,General ST
+COEP Technological University,Mechanical Engineering,GOBCS,98.8506155,General OBC
+COEP Technological University,Mechanical Engineering,GSEBCS,99.0908422,General SEBC
+COEP Technological University,Mechanical Engineering,LOPENS,95.1080209,Ladies Open
+COEP Technological University,Mechanical Engineering,PWDOPENS,54.1537389,PWD Open
+COEP Technological University,Mechanical Engineering,TFWS,83.4741816,Tuition Fee Waiver
+COEP Technological University,Manufacturing Science and Engineering,GOPENS,95.8038869,General Open
+COEP Technological University,Manufacturing Science and Engineering,GSCS,86.7181467,General SC
+COEP Technological University,Manufacturing Science and Engineering,GSTS,97.0921673,General ST
+COEP Technological University,Manufacturing Science and Engineering,GOBCS,98.1729808,General OBC
+COEP Technological University,Manufacturing Science and Engineering,GSEBCS,98.4934988,General SEBC
+COEP Technological University,Manufacturing Science and Engineering,LOPENS,92.933589,Ladies Open
+COEP Technological University,Manufacturing Science and Engineering,PWDOPENS,44.5303298,PWD Open
+COEP Technological University,Manufacturing Science and Engineering,TFWS,58.8525307,Tuition Fee Waiver
+COEP Technological University,Metallurgy and Material Technology,GOPENS,94.6277162,General Open
+COEP Technological University,Metallurgy and Material Technology,GSCS,81.0403668,General SC
+COEP Technological University,Metallurgy and Material Technology,GSTS,94.2598398,General ST
+COEP Technological University,Metallurgy and Material Technology,GOBCS,97.9603197,General OBC
+COEP Technological University,Metallurgy and Material Technology,GSEBCS,98.1051898,General SEBC
+COEP Technological University,Metallurgy and Material Technology,LOPENS,91.6321516,Ladies Open
+COEP Technological University,Metallurgy and Material Technology,PWDOPENS,43.658874,PWD Open
+COEP Technological University,Metallurgy and Material Technology,TFWS,47.7841578,Tuition Fee Waiver
+COEP Technological University,Artificial Intelligence and Machine Learning,GOPENS,98.6211176,General Open
+COEP Technological University,Artificial Intelligence and Machine Learning,GSCS,95.45053,General SC
+COEP Technological University,Artificial Intelligence and Machine Learning,GSTS,99.6353457,General ST
+COEP Technological University,Artificial Intelligence and Machine Learning,GOBCS,99.738767,General OBC
+COEP Technological University,Artificial Intelligence and Machine Learning,GSEBCS,99.773598,General SEBC
+COEP Technological University,Artificial Intelligence and Machine Learning,LOPENS,98.0215953,Ladies Open
+COEP Technological University,Artificial Intelligence and Machine Learning,PWDOPENS,94.3275746,PWD Open
+COEP Technological University,Artificial Intelligence and Machine Learning,TFWS,96.3011479,Tuition Fee Waiver
+Vishwakarma Institute of Technology,Civil Engineering,GOPENS,89.682715,General Open
+Vishwakarma Institute of Technology,Civil Engineering,GSCS,71.4842352,General SC
+Vishwakarma Institute of Technology,Civil Engineering,GSTS,92.933589,General ST
+Vishwakarma Institute of Technology,Civil Engineering,GOBCS,92.7307558,General OBC
+Vishwakarma Institute of Technology,Civil Engineering,GSEBCS,94.3738279,General SEBC
+Vishwakarma Institute of Technology,Civil Engineering,LOPENS,87.5995489,Ladies Open
+Vishwakarma Institute of Technology,Civil Engineering,PWDOPENS,51.57164,PWD Open
+Vishwakarma Institute of Technology,Civil Engineering,TFWS,87.4115391,Tuition Fee Waiver
+Vishwakarma Institute of Technology,Computer Engineering,GOPENS,95.6472486,General Open
+Vishwakarma Institute of Technology,Computer Engineering,GSCS,86.6751751,General SC
+Vishwakarma Institute of Technology,Computer Engineering,GSTS,97.0164647,General ST
+Vishwakarma Institute of Technology,Computer Engineering,GOBCS,98.4626185,General OBC
+Vishwakarma Institute of Technology,Computer Engineering,GSEBCS,98.4901238,General SEBC
+Vishwakarma Institute of Technology,Computer Engineering,LOPENS,93.8434722,Ladies Open
+Vishwakarma Institute of Technology,Computer Engineering,PWDOPENS,55.2744499,PWD Open
+Vishwakarma Institute of Technology,Computer Engineering,TFWS,74.9785452,Tuition Fee Waiver
+Vishwakarma Institute of Technology,Information Technology,GOPENS,94.5314685,General Open
+Vishwakarma Institute of Technology,Information Technology,GSCS,82.2162613,General SC
+Vishwakarma Institute of Technology,Information Technology,GSTS,96.4193661,General ST
+Vishwakarma Institute of Technology,Information Technology,GOBCS,98.1051898,General OBC
+Vishwakarma Institute of Technology,Information Technology,GSEBCS,98.1887378,General SEBC
+Vishwakarma Institute of Technology,Information Technology,LOPENS,92.9202613,Ladies Open
+Vishwakarma Institute of Technology,Information Technology,PWDOPENS,40.0936536,PWD Open
+Vishwakarma Institute of Technology,Information Technology,TFWS,25.9873754,Tuition Fee Waiver
+Vishwakarma Institute of Technology,Electronics and Telecommunication Engg,GOPENS,93.1055879,General Open
+Vishwakarma Institute of Technology,Electronics and Telecommunication Engg,GSCS,69.4936445,General SC
+Vishwakarma Institute of Technology,Electronics and Telecommunication Engg,GSTS,94.1811162,General ST
+Vishwakarma Institute of Technology,Electronics and Telecommunication Engg,GOBCS,97.2937063,General OBC
+Vishwakarma Institute of Technology,Electronics and Telecommunication Engg,GSEBCS,97.5007362,General SEBC
+Vishwakarma Institute of Technology,Electronics and Telecommunication Engg,LOPENS,90.668828,Ladies Open
+Vishwakarma Institute of Technology,Electronics and Telecommunication Engg,PWDOPENS,5.4917171,PWD Open
+Vishwakarma Institute of Technology,Electronics and Telecommunication Engg,TFWS,94.0716041,Tuition Fee Waiver
+Vishwakarma Institute of Technology,Instrumentation and Control Engineering,GOPENS,88.5033286,General Open
+Vishwakarma Institute of Technology,Instrumentation and Control Engineering,GSCS,15.9545455,General SC
+Vishwakarma Institute of Technology,Instrumentation and Control Engineering,GSTS,81.8021201,General ST
+Vishwakarma Institute of Technology,Instrumentation and Control Engineering,GOBCS,91.9353149,General OBC
+Vishwakarma Institute of Technology,Instrumentation and Control Engineering,GSEBCS,95.45053,General SEBC
+Vishwakarma Institute of Technology,Instrumentation and Control Engineering,LOPENS,85.9124978,Ladies Open
+Vishwakarma Institute of Technology,Instrumentation and Control Engineering,TFWS,84.5627208,Tuition Fee Waiver
+Vishwakarma Institute of Technology,Mechanical Engineering,GOPENS,89.9712654,General Open
+Vishwakarma Institute of Technology,Mechanical Engineering,GSCS,47.13962,General SC
+Vishwakarma Institute of Technology,Mechanical Engineering,GSTS,89.8231024,General ST
+Vishwakarma Institute of Technology,Mechanical Engineering,GOBCS,94.7397468,General OBC
+Vishwakarma Institute of Technology,Mechanical Engineering,GSEBCS,95.4290064,General SEBC
+Vishwakarma Institute of Technology,Mechanical Engineering,LOPENS,85.977536,Ladies Open
+Vishwakarma Institute of Technology,Mechanical Engineering,PWDOPENS,92.2439918,PWD Open
+Vishwakarma Institute of Technology,Mechanical Engineering,TFWS,91.082078,Tuition Fee Waiver
+Vishwakarma Institute of Technology,Computer Science and Engineering(Artificial Intelligence and Machine Learning),GOPENS,94.5454545,General Open
+Vishwakarma Institute of Technology,Computer Science and Engineering(Artificial Intelligence and Machine Learning),GSCS,80.7175218,General SC
+Vishwakarma Institute of Technology,Computer Science and Engineering(Artificial Intelligence and Machine Learning),GSTS,95.8120216,General ST
+Vishwakarma Institute of Technology,Computer Science and Engineering(Artificial Intelligence and Machine Learning),GOBCS,98.016848,General OBC
+Vishwakarma Institute of Technology,Computer Science and Engineering(Artificial Intelligence and Machine Learning),GSEBCS,97.9640927,General SEBC
+Vishwakarma Institute of Technology,Computer Science and Engineering(Artificial Intelligence and Machine Learning),LOPENS,92.7190965,Ladies Open
+Vishwakarma Institute of Technology,Computer Science and Engineering(Artificial Intelligence and Machine Learning),PWDOPENS,33.6209084,PWD Open
+Vishwakarma Institute of Technology,Computer Science and Engineering(Artificial Intelligence and Machine Learning),TFWS,60.8775137,Tuition Fee Waiver
+Vishwakarma Institute of Technology,Computer Science and Engineering(Data Science),GOPENS,93.8708608,General Open
+Vishwakarma Institute of Technology,Computer Science and Engineering(Data Science),GSCS,73.1347962,General SC
+Vishwakarma Institute of Technology,Computer Science and Engineering(Data Science),GSTS,95.635667,General ST
+Vishwakarma Institute of Technology,Computer Science and Engineering(Data Science),GOBCS,97.7473483,General OBC
+Vishwakarma Institute of Technology,Computer Science and Engineering(Data Science),GSEBCS,97.8454962,General SEBC
+Vishwakarma Institute of Technology,Computer Science and Engineering(Data Science),LOPENS,92.1231015,Ladies Open
+Vishwakarma Institute of Technology,Computer Science and Engineering(Data Science),PWDOPENS,43.4652257,PWD Open
+Vishwakarma Institute of Technology,Computer Science and Engineering(Data Science),TFWS,49.2256217,Tuition Fee Waiver
+Vishwakarma Institute of Technology,Computer Science and Engineering (Artificial Intelligence),GOPENS,93.9463602,General Open
+Vishwakarma Institute of Technology,Computer Science and Engineering (Artificial Intelligence),GSCS,73.7482517,General SC
+Vishwakarma Institute of Technology,Computer Science and Engineering (Artificial Intelligence),GSTS,95.4261304,General ST
+Vishwakarma Institute of Technology,Computer Science and Engineering (Artificial Intelligence),GOBCS,97.7549689,General OBC
+Vishwakarma Institute of Technology,Computer Science and Engineering (Artificial Intelligence),GSEBCS,97.7678736,General SEBC
+Vishwakarma Institute of Technology,Computer Science and Engineering (Artificial Intelligence),LOPENS,92.1378092,Ladies Open
+Vishwakarma Institute of Technology,Computer Science and Engineering (Artificial Intelligence),PWDOPENS,35.7798895,PWD Open
+Vishwakarma Institute of Technology,Computer Science and Engineering (Artificial Intelligence),TFWS,39.2328654,Tuition Fee Waiver
+Vishwakarma Institute of Technology,Computer Science and Engineering (Internet of Things and Cyber Security Including Block Chain,GOPENS,93.2766093,General Open
+Vishwakarma Institute of Technology,Computer Science and Engineering (Internet of Things and Cyber Security Including Block Chain,GSCS,70.6189283,General SC
+Vishwakarma Institute of Technology,Computer Science and Engineering (Internet of Things and Cyber Security Including Block Chain,GSTS,94.9425795,General ST
+Vishwakarma Institute of Technology,Computer Science and Engineering (Internet of Things and Cyber Security Including Block Chain,GOBCS,97.5247707,General OBC
+Vishwakarma Institute of Technology,Computer Science and Engineering (Internet of Things and Cyber Security Including Block Chain,GSEBCS,97.6563864,General SEBC
+Vishwakarma Institute of Technology,Computer Science and Engineering (Internet of Things and Cyber Security Including Block Chain,LOPENS,91.4198717,Ladies Open
+Vishwakarma Institute of Technology,Computer Science and Engineering (Internet of Things and Cyber Security Including Block Chain,PWDOPENS,15.4365886,PWD Open
+Vishwakarma Institute of Technology,Computer Science and Engineering (Internet of Things and Cyber Security Including Block Chain,TFWS,94.998245,Tuition Fee Waiver
+Vishwakarma Institute of Technology,Computer Engineering (Software Engineering),GOPENS,94.2587413,General Open
+Vishwakarma Institute of Technology,Computer Engineering (Software Engineering),GSCS,75.8001957,General SC
+Vishwakarma Institute of Technology,Computer Engineering (Software Engineering),GSTS,95.7536628,General ST
+Vishwakarma Institute of Technology,Computer Engineering (Software Engineering),GOBCS,97.7290277,General OBC
+Vishwakarma Institute of Technology,Computer Engineering (Software Engineering),GSEBCS,97.9446841,General SEBC
+Vishwakarma Institute of Technology,Computer Engineering (Software Engineering),LOPENS,91.5026371,Ladies Open
+Vishwakarma Institute of Technology,Computer Engineering (Software Engineering),PWDOPENS,49.6043895,PWD Open
+Vishwakarma Institute of Technology,Computer Engineering (Software Engineering),TFWS,73.6345056,Tuition Fee Waiver
+Vishwakarma Institute of Technology,Artificial Intelligence and Data Science,GOPENS,93.884935,General Open
+Vishwakarma Institute of Technology,Artificial Intelligence and Data Science,GSCS,77.5384615,General SC
+Vishwakarma Institute of Technology,Artificial Intelligence and Data Science,GSTS,95.2407244,General ST
+Vishwakarma Institute of Technology,Artificial Intelligence and Data Science,GOBCS,97.7473483,General OBC
+Vishwakarma Institute of Technology,Artificial Intelligence and Data Science,GSEBCS,97.7290277,General SEBC
+Vishwakarma Institute of Technology,Artificial Intelligence and Data Science,LOPENS,91.6927138,Ladies Open
+Vishwakarma Institute of Technology,Artificial Intelligence and Data Science,PWDOPENS,15.3499592,PWD Open
+Vishwakarma Institute of Technology,Artificial Intelligence and Data Science,TFWS,25.2088452,Tuition Fee Waiver
+Vishwakarma Institute of Technology,Computer Engineering,GOPENS,93.4192837,General Open
+Vishwakarma Institute of Technology,Computer Engineering,GSCS,74.9785452,General SC
+Vishwakarma Institute of Technology,Computer Engineering,GSTS,94.5862876,General ST
+Vishwakarma Institute of Technology,Computer Engineering,GOBCS,97.5051096,General OBC
+Vishwakarma Institute of Technology,Computer Engineering,GSEBCS,97.5766142,General SEBC
+Vishwakarma Institute of Technology,Computer Engineering,LOPENS,90.6536517,Ladies Open
+Vishwakarma Institute of Technology,Computer Engineering,PWDOPENS,56.2929777,PWD Open
+Vishwakarma Institute of Technology,Computer Engineering,TFWS,95.9807017,Tuition Fee Waiver
+Vishwakarma Institute of Technology,Information Technology,GOPENS,92.4545035,General Open
+Vishwakarma Institute of Technology,Information Technology,GSCS,67.8236662,General SC
+Vishwakarma Institute of Technology,Information Technology,GSTS,94.4637991,General ST
+Vishwakarma Institute of Technology,Information Technology,GOBCS,97.277814,General OBC
+Vishwakarma Institute of Technology,Information Technology,GSEBCS,97.2725351,General SEBC
+Vishwakarma Institute of Technology,Information Technology,LOPENS,90.4253432,Ladies Open
+Vishwakarma Institute of Technology,Information Technology,PWDOPENS,94.7424061,PWD Open
+Vishwakarma Institute of Technology,Information Technology,TFWS,95.4055944,Tuition Fee Waiver
+Vishwakarma Institute of Technology,Electrical Engineering,GOPENS,84.4950314,General Open
+Vishwakarma Institute of Technology,Electrical Engineering,GSCS,25.968356,General SC
+Vishwakarma Institute of Technology,Electrical Engineering,GSTS,91.2776413,General ST
+Vishwakarma Institute of Technology,Electrical Engineering,GOBCS,91.8376367,General OBC
+Vishwakarma Institute of Technology,Electrical Engineering,GSEBCS,93.2766093,General SEBC
+Vishwakarma Institute of Technology,Electrical Engineering,LOPENS,81.0403668,Ladies Open
+Vishwakarma Institute of Technology,Electrical Engineering,PWDOPENS,77.161886,PWD Open
+Vishwakarma Institute of Technology,Electrical Engineering,TFWS,86.552754,Tuition Fee Waiver
+Vishwakarma Institute of Technology,Electronics and Telecommunication Engg,GOPENS,88.8689717,General Open
+Vishwakarma Institute of Technology,Electronics and Telecommunication Engg,GSCS,58.4401523,General SC
+Vishwakarma Institute of Technology,Electronics and Telecommunication Engg,GSTS,89.9884696,General ST
+Vishwakarma Institute of Technology,Electronics and Telecommunication Engg,GOBCS,95.830721,General OBC
+Vishwakarma Institute of Technology,Electronics and Telecommunication Engg,GSEBCS,96.308175,General SEBC
+Vishwakarma Institute of Technology,Electronics and Telecommunication Engg,LOPENS,88.680102,Ladies Open
+Vishwakarma Institute of Technology,Electronics and Telecommunication Engg,TFWS,94.0544184,Tuition Fee Waiver
+PVG's College of Engineering,Computer Engineering,GOPENS,93.4192837,General Open
+PVG's College of Engineering,Computer Engineering,GSCS,74.9785452,General SC
+PVG's College of Engineering,Computer Engineering,GSTS,94.5862876,General ST
+PVG's College of Engineering,Computer Engineering,GOBCS,97.5051096,General OBC
+PVG's College of Engineering,Computer Engineering,GSEBCS,97.5766142,General SEBC
+PVG's College of Engineering,Computer Engineering,LOPENS,90.6536517,Ladies Open
+PVG's College of Engineering,Computer Engineering,PWDOPENS,56.2929777,PWD Open
+PVG's College of Engineering,Computer Engineering,TFWS,95.9807017,Tuition Fee Waiver
+PVG's College of Engineering,Information Technology,GOPENS,92.4545035,General Open
+PVG's College of Engineering,Information Technology,GSCS,67.8236662,General SC
+PVG's College of Engineering,Information Technology,GSTS,94.4637991,General ST
+PVG's College of Engineering,Information Technology,GOBCS,97.277814,General OBC
+PVG's College of Engineering,Information Technology,GSEBCS,97.2725351,General SEBC
+PVG's College of Engineering,Information Technology,LOPENS,90.4253432,Ladies Open
+PVG's College of Engineering,Information Technology,PWDOPENS,94.7424061,PWD Open
+PVG's College of Engineering,Information Technology,TFWS,95.4055944,Tuition Fee Waiver
+PVG's College of Engineering,Electrical Engineering,GOPENS,84.4950314,General Open
+PVG's College of Engineering,Electrical Engineering,GSCS,25.968356,General SC
+PVG's College of Engineering,Electrical Engineering,GSTS,91.2776413,General ST
+PVG's College of Engineering,Electrical Engineering,GOBCS,91.8376367,General OBC
+PVG's College of Engineering,Electrical Engineering,GSEBCS,93.2766093,General SEBC
+PVG's College of Engineering,Electrical Engineering,LOPENS,81.0403668,Ladies Open
+PVG's College of Engineering,Electrical Engineering,PWDOPENS,77.161886,PWD Open
+PVG's College of Engineering,Electrical Engineering,TFWS,86.552754,Tuition Fee Waiver
+PVG's College of Engineering,Electronics and Telecommunication Engg,GOPENS,88.8689717,General Open
+PVG's College of Engineering,Electronics and Telecommunication Engg,GSCS,58.4401523,General SC
+PVG's College of Engineering,Electronics and Telecommunication Engg,GSTS,89.9884696,General ST
+PVG's College of Engineering,Electronics and Telecommunication Engg,GOBCS,95.830721,General OBC
+PVG's College of Engineering,Electronics and Telecommunication Engg,GSEBCS,96.308175,General SEBC
+PVG's College of Engineering,Electronics and Telecommunication Engg,LOPENS,88.680102,Ladies Open
+PVG's College of Engineering,Electronics and Telecommunication Engg,TFWS,94.0544184,Tuition Fee Waiver
+PVG's College of Engineering,Mechanical Engineering,GOPENS,83.9020979,General Open
+PVG's College of Engineering,Mechanical Engineering,GSCS,82.3736697,General SC
+PVG's College of Engineering,Mechanical Engineering,GOBCS,91.5650868,General OBC
+PVG's College of Engineering,Mechanical Engineering,GSEBCS,92.8125754,General SEBC
+PVG's College of Engineering,Mechanical Engineering,LOPENS,79.7946282,Ladies Open
+PVG's College of Engineering,Mechanical Engineering,TFWS,81.6328671,Tuition Fee Waiver
+PVG's College of Engineering,Printing and Packing Technology,GOPENS,70.7395498,General Open
+PVG's College of Engineering,Printing and Packing Technology,GSCS,74.556213,General SC
+PVG's College of Engineering,Printing and Packing Technology,GOBCS,73.4722277,General OBC
+PVG's College of Engineering,Printing and Packing Technology,GSEBCS,85.4112341,General SEBC
+PVG's College of Engineering,Printing and Packing Technology,LOPENS,80.2746285,Ladies Open
+PVG's College of Engineering,Printing and Packing Technology,PWDOPENS,89.4914664,PWD Open
+PVG's College of Engineering,Artificial Intelligence and Data Science,GOPENS,92.5853623,General Open
+PVG's College of Engineering,Artificial Intelligence and Data Science,GSCS,67.8210479,General SC
+PVG's College of Engineering,Artificial Intelligence and Data Science,GSTS,94.2050981,General ST
+PVG's College of Engineering,Artificial Intelligence and Data Science,GOBCS,97.0940053,General OBC
+PVG's College of Engineering,Artificial Intelligence and Data Science,GSEBCS,97.1042471,General SEBC
+PVG's College of Engineering,Artificial Intelligence and Data Science,LOPENS,90.5015276,Ladies Open
+PVG's College of Engineering,Artificial Intelligence and Data Science,TFWS,93.9883008,Tuition Fee Waiver
+Pimpri Chinchwad College of Engineering,Civil Engineering,GOPENS,89.8231024,General Open
+Pimpri Chinchwad College of Engineering,Civil Engineering,GSCS,68.9620341,General SC
+Pimpri Chinchwad College of Engineering,Civil Engineering,GSTS,93.4570631,General ST
+Pimpri Chinchwad College of Engineering,Civil Engineering,GOBCS,94.5314685,General OBC
+Pimpri Chinchwad College of Engineering,Civil Engineering,GSEBCS,94.8202997,General SEBC
+Pimpri Chinchwad College of Engineering,Civil Engineering,LOPENS,84.0359888,Ladies Open
+Pimpri Chinchwad College of Engineering,Civil Engineering,PWDOPENS,96.4685376,PWD Open
+Pimpri Chinchwad College of Engineering,Civil Engineering,TFWS,55.1895416,Tuition Fee Waiver
+Pimpri Chinchwad College of Engineering,Computer Engineering,GOPENS,95.6741283,General Open
+Pimpri Chinchwad College of Engineering,Computer Engineering,GSCS,83.1060395,General SC
+Pimpri Chinchwad College of Engineering,Computer Engineering,GSTS,96.4091902,General ST
+Pimpri Chinchwad College of Engineering,Computer Engineering,GOBCS,98.4988371,General OBC
+Pimpri Chinchwad College of Engineering,Computer Engineering,GSEBCS,98.6520376,General SEBC
+Pimpri Chinchwad College of Engineering,Computer Engineering,LOPENS,93.0332708,Ladies Open
+Pimpri Chinchwad College of Engineering,Computer Engineering,PWDOPENS,53.7591782,PWD Open
+Pimpri Chinchwad College of Engineering,Computer Engineering,TFWS,80.7807182,Tuition Fee Waiver
+Pimpri Chinchwad College of Engineering,Computer Engineering,GOPENS,94.6277162,General Open
+Pimpri Chinchwad College of Engineering,Computer Engineering,GSCS,76.9213781,General SC
+Pimpri Chinchwad College of Engineering,Computer Engineering,GSTS,96.2611882,General ST
+Pimpri Chinchwad College of Engineering,Computer Engineering,GOBCS,98.4106279,General OBC
+Pimpri Chinchwad College of Engineering,Computer Engineering,GSEBCS,98.1780035,General SEBC
+Pimpri Chinchwad College of Engineering,Computer Engineering,LOPENS,94.3106153,Ladies Open
+Pimpri Chinchwad College of Engineering,Computer Engineering,PWDOPENS,95.830721,PWD Open
+Pimpri Chinchwad College of Engineering,Information Technology,GOPENS,94.7424061,General Open
+Pimpri Chinchwad College of Engineering,Information Technology,GSCS,80.7807182,General SC
+Pimpri Chinchwad College of Engineering,Information Technology,GSTS,95.868115,General ST
+Pimpri Chinchwad College of Engineering,Information Technology,GOBCS,98.0894834,General OBC
+Pimpri Chinchwad College of Engineering,Information Technology,GSEBCS,98.3419725,General SEBC
+Pimpri Chinchwad College of Engineering,Information Technology,LOPENS,92.1231015,Ladies Open
+Pimpri Chinchwad College of Engineering,Information Technology,PWDOPENS,81.1324174,PWD Open
+Pimpri Chinchwad College of Engineering,Information Technology,TFWS,97.1954276,Tuition Fee Waiver
+Pimpri Chinchwad College of Engineering,Electronics and Telecommunication Engg,GOPENS,92.9202613,General Open
+Pimpri Chinchwad College of Engineering,Electronics and Telecommunication Engg,GSCS,68.2382408,General SC
+Pimpri Chinchwad College of Engineering,Electronics and Telecommunication Engg,GSTS,94.5314685,General ST
+Pimpri Chinchwad College of Engineering,Electronics and Telecommunication Engg,GOBCS,97.4161284,General OBC
+Pimpri Chinchwad College of Engineering,Electronics and Telecommunication Engg,GSEBCS,97.8644152,General SEBC
+Pimpri Chinchwad College of Engineering,Electronics and Telecommunication Engg,LOPENS,90.970538,Ladies Open
+Pimpri Chinchwad College of Engineering,Electronics and Telecommunication Engg,PWDOPENS,95.4664524,PWD Open
+Pimpri Chinchwad College of Engineering,Electronics and Telecommunication Engg,TFWS,57.8195751,Tuition Fee Waiver
+Pimpri Chinchwad College of Engineering,Mechanical Engineering,GOPENS,88.9773781,General Open
+Pimpri Chinchwad College of Engineering,Mechanical Engineering,GSCS,54.5739657,General SC
+Pimpri Chinchwad College of Engineering,Mechanical Engineering,GSTS,89.2894353,General ST
+Pimpri Chinchwad College of Engineering,Mechanical Engineering,GOBCS,96.1512986,General OBC
+Pimpri Chinchwad College of Engineering,Mechanical Engineering,GSEBCS,96.2382445,General SEBC
+Pimpri Chinchwad College of Engineering,Mechanical Engineering,LOPENS,87.3285356,Ladies Open
+Pimpri Chinchwad College of Engineering,Mechanical Engineering,PWDOPENS,93.9467062,PWD Open
+Pimpri Chinchwad College of Engineering,Mechanical Engineering,TFWS,93.7361801,Tuition Fee Waiver
+Pimpri Chinchwad College of Engineering,Computer Science and Engineering(Artificial Intelligence and Machine Learning),GOPENS,95.2281725,General Open
+Pimpri Chinchwad College of Engineering,Computer Science and Engineering(Artificial Intelligence and Machine Learning),GSCS,79.6033896,General SC
+Pimpri Chinchwad College of Engineering,Computer Science and Engineering(Artificial Intelligence and Machine Learning),GSTS,95.9989694,General ST
+Pimpri Chinchwad College of Engineering,Computer Science and Engineering(Artificial Intelligence and Machine Learning),GOBCS,98.0215953,General OBC
+Pimpri Chinchwad College of Engineering,Computer Science and Engineering(Artificial Intelligence and Machine Learning),GSEBCS,98.2765883,General SEBC
+Pimpri Chinchwad College of Engineering,Computer Science and Engineering(Artificial Intelligence and Machine Learning),LOPENS,92.9807126,Ladies Open
+Pimpri Chinchwad College of Engineering,Computer Science and Engineering(Artificial Intelligence and Machine Learning),PWDOPENS,68.4887011,PWD Open
+Pimpri Chinchwad College of Engineering,Computer Science and Engineering(Artificial Intelligence and Machine Learning),TFWS,96.8547544,Tuition Fee Waiver
+JSPM Jaywantrao Sawant College,Civil Engineering,GOPENS,78.6137148,General Open
+JSPM Jaywantrao Sawant College,Civil Engineering,GSCS,57.4376852,General SC
+JSPM Jaywantrao Sawant College,Civil Engineering,GSTS,81.6328671,General ST
+JSPM Jaywantrao Sawant College,Civil Engineering,GOBCS,85.4179037,General OBC
+JSPM Jaywantrao Sawant College,Civil Engineering,GSEBCS,89.2894353,General SEBC
+JSPM Jaywantrao Sawant College,Civil Engineering,LOPENS,80.8599071,Ladies Open
+JSPM Jaywantrao Sawant College,Civil Engineering,PWDOPENS,85.9058498,PWD Open
+JSPM Jaywantrao Sawant College,Civil Engineering,TFWS,72.102802,Tuition Fee Waiver
+JSPM Jaywantrao Sawant College,Computer Engineering,GOPENS,90.249489,General Open
+JSPM Jaywantrao Sawant College,Computer Engineering,GSCS,67.8210479,General SC
+JSPM Jaywantrao Sawant College,Computer Engineering,GSTS,92.5367989,General ST
+JSPM Jaywantrao Sawant College,Computer Engineering,GOBCS,95.4290064,General OBC
+JSPM Jaywantrao Sawant College,Computer Engineering,GSEBCS,96.171967,General SEBC
+JSPM Jaywantrao Sawant College,Computer Engineering,LOPENS,89.51289,Ladies Open
+JSPM Jaywantrao Sawant College,Computer Engineering,PWDOPENS,92.933589,PWD Open
+JSPM Jaywantrao Sawant College,Computer Engineering,TFWS,92.3780367,Tuition Fee Waiver
+Modern College of Engineering Pune,Computer Engineering,GOPENS,88.6282029,General Open
+Modern College of Engineering Pune,Computer Engineering,GSCS,57.5410529,General SC
+Modern College of Engineering Pune,Computer Engineering,GSTS,90.4110066,General ST
+Modern College of Engineering Pune,Computer Engineering,GOBCS,95.0790084,General OBC
+Modern College of Engineering Pune,Computer Engineering,GSEBCS,95.4664524,General SEBC
+Modern College of Engineering Pune,Computer Engineering,LOPENS,88.1387307,Ladies Open
+Modern College of Engineering Pune,Computer Engineering,TFWS,88.7615737,Tuition Fee Waiver
+Modern College of Engineering Pune,Information Technology,GOPENS,88.188033,General Open
+Modern College of Engineering Pune,Information Technology,GSCS,47.0502678,General SC
+Modern College of Engineering Pune,Information Technology,GSTS,88.4967904,General ST
+Modern College of Engineering Pune,Information Technology,GOBCS,94.6277162,General OBC
+Modern College of Engineering Pune,Information Technology,GSEBCS,94.816106,General SEBC
+Modern College of Engineering Pune,Information Technology,LOPENS,87.9272878,Ladies Open
+Modern College of Engineering Pune,Electrical Engineering,GOPENS,78.6137148,General Open
+Modern College of Engineering Pune,Electrical Engineering,GSCS,78.4242636,General SC
+Modern College of Engineering Pune,Electrical Engineering,GOBCS,85.9124978,General OBC
+Modern College of Engineering Pune,Electrical Engineering,GSEBCS,87.6322867,General SEBC
+Modern College of Engineering Pune,Electrical Engineering,LOPENS,73.6159498,Ladies Open
+Modern College of Engineering Pune,Electrical Engineering,TFWS,56.6213771,Tuition Fee Waiver
+Modern College of Engineering Pune,Electronics and Telecommunication Engg,GOPENS,85.6421968,General Open
+Modern College of Engineering Pune,Electronics and Telecommunication Engg,GSCS,3.0685728,General SC
+Modern College of Engineering Pune,Electronics and Telecommunication Engg,GSTS,85.6421968,General ST
+Modern College of Engineering Pune,Electronics and Telecommunication Engg,GOBCS,92.9187706,General OBC
+Modern College of Engineering Pune,Electronics and Telecommunication Engg,GSEBCS,93.4220965,General SEBC
+Modern College of Engineering Pune,Electronics and Telecommunication Engg,LOPENS,85.1002266,Ladies Open
+Modern College of Engineering Pune,Electronics and Telecommunication Engg,TFWS,86.9194446,Tuition Fee Waiver
+Modern College of Engineering Pune,Mechanical Engineering,GOPENS,73.5570613,General Open
+Modern College of Engineering Pune,Mechanical Engineering,GSCS,73.6328536,General SC
+Modern College of Engineering Pune,Mechanical Engineering,GOBCS,84.4950314,General OBC
+Modern College of Engineering Pune,Mechanical Engineering,GSEBCS,84.4950314,General SEBC
+Modern College of Engineering Pune,Mechanical Engineering,LOPENS,62.8632493,Ladies Open
+Modern College of Engineering Pune,Mechanical Engineering,TFWS,60.634478,Tuition Fee Waiver
+Modern College of Engineering Pune,Electronics and Computer Engineering,GOPENS,86.9194446,General Open
+Modern College of Engineering Pune,Electronics and Computer Engineering,GSCS,17.7120141,General SC
+Modern College of Engineering Pune,Electronics and Computer Engineering,GSTS,87.6831328,General ST
+Modern College of Engineering Pune,Electronics and Computer Engineering,GOBCS,93.4773416,General OBC
+Modern College of Engineering Pune,Electronics and Computer Engineering,GSEBCS,94.1618476,General SEBC
+Modern College of Engineering Pune,Electronics and Computer Engineering,LOPENS,85.6421968,Ladies Open
+Modern College of Engineering Pune,Electronics and Computer Engineering,TFWS,87.3285356,Tuition Fee Waiver
+Modern College of Engineering Pune,Artificial Intelligence and Machine Learning,GOPENS,89.2894353,General Open
+Modern College of Engineering Pune,Artificial Intelligence and Machine Learning,GSCS,60.8775137,General SC
+Modern College of Engineering Pune,Artificial Intelligence and Machine Learning,GSTS,93.5907336,General ST
+Modern College of Engineering Pune,Artificial Intelligence and Machine Learning,GOBCS,94.1814562,General OBC
+Modern College of Engineering Pune,Artificial Intelligence and Machine Learning,GSEBCS,94.7159159,General SEBC
+Modern College of Engineering Pune,Artificial Intelligence and Machine Learning,LOPENS,86.7181467,Ladies Open
+Modern College of Engineering Pune,Artificial Intelligence and Machine Learning,TFWS,88.9550679,Tuition Fee Waiver
+Modern College of Engineering Pune,Artificial Intelligence and Data Science,GOPENS,87.9466479,General Open
+Modern College of Engineering Pune,Artificial Intelligence and Data Science,GSCS,37.1950556,General SC
+Modern College of Engineering Pune,Artificial Intelligence and Data Science,GSTS,92.52184,General ST
+Modern College of Engineering Pune,Artificial Intelligence and Data Science,GOBCS,94.3106153,General OBC
+Modern College of Engineering Pune,Artificial Intelligence and Data Science,GSEBCS,94.6981971,General SEBC
+Modern College of Engineering Pune,Artificial Intelligence and Data Science,LOPENS,85.9646097,Ladies Open
+Modern College of Engineering Pune,Artificial Intelligence and Data Science,PWDOPENS,89.1962092,PWD Open
+Modern College of Engineering Pune,Artificial Intelligence and Data Science,TFWS,88.727183,Tuition Fee Waiver
