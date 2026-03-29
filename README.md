@@ -1,2 +1,2 @@
 # CoRe
-CoRe is a too that, makes a list of the colleges, in which you should be able to take admission based on the previous year cutoff rounds data.
+CoRe is a tool that generates a list of colleges where you can take admission, based on the previous year's cutoff rounds data.
