@@ -24,12 +24,12 @@ def home():
     return {'message': 'MHT-CET College predictor'}
 
 @app.get('/recommender')
-def recommender(percentile: float, caste: str, branch: str):
+def recommender(percentile: float, category: str, branch: str):
 
     db = get_db()
     cursor = db.cursor()
     cursor.execute("""
-            SELECT college_name, branch_name, cutoff_percentile
+            SELECT college_name, branch_name, percentile
             FROM cutoffs
             join colleges
             ON colleges.college_id = cutoffs.college_id
@@ -39,7 +39,7 @@ def recommender(percentile: float, caste: str, branch: str):
             AND branch_name = %s
             AND category = %s       
             ORDER BY cutoff_percentile DESC
-    """, (percentile, branch, caste)
+    """, (percentile, branch, category)
     )
 
     result = cursor.fetchall()
