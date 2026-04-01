@@ -1,18 +1,23 @@
 import csv
 import mysql.connector
 from collections import defaultdict
+from pathlib import Path
+from dotenv import load_dotenv
+import os
+
+load_dotenv(Path(__file__).parent.parent /'backend' / '.env')
 
 # ── Config ────────────────────────────────────────────────────────────────────
 DB_CONFIG = {
-    "host":     "your-railway-host",
-    "port":     3306,
-    "user":     "your-user",
-    "password": "your-password",
-    "database": "your-database",
+    "host":     os.getenv("DB_HOST"),
+    "port":     int(os.getenv("DB_PORT")),
+    "user":     os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASS"),
+    "database": os.getenv("DB_NAME"),
     "use_pure": True,
 }
 
-FLAT_CSV = "cutoffs_flat.csv"
+FLAT_CSV = Path(__file__).parent.parent /  "cutoffs_flat.csv"
 
 # ── Read flat CSV ─────────────────────────────────────────────────────────────
 print("Reading CSV...")
@@ -21,6 +26,7 @@ with open(FLAT_CSV, newline="", encoding="utf-8") as f:
 print(f"  {len(rows):,} rows loaded")
 
 # ── Deduplicate into 3 tables ─────────────────────────────────────────────────
+
 
 # colleges — unique by college_code
 colleges = {}
@@ -31,6 +37,7 @@ for r in rows:
             r["college_code"],
             r["college_name"],
             r["status"],
+            r["division"],
         )
 
 # branches — unique by branch_code
@@ -77,7 +84,7 @@ cursor.execute("""
         college_code  VARCHAR(10)  PRIMARY KEY,
         college_name  VARCHAR(300) NOT NULL,
         status        VARCHAR(300),
-        district      VARCHAR(100)
+        division      VARCHAR(100)
     )
 """)
 
@@ -99,7 +106,7 @@ cursor.execute("""
         level         VARCHAR(10)  NOT NULL,
         stage         VARCHAR(5)   NOT NULL,
         category      VARCHAR(20)  NOT NULL,
-        rank          INT          NOT NULL,
+        `rank`        INT          NOT NULL,
         percentile    FLOAT        NOT NULL,
         FOREIGN KEY (branch_code) REFERENCES branches(branch_code),
         UNIQUE KEY unique_cutoff (branch_code, year, round, level, stage, category)
@@ -112,9 +119,10 @@ print("  Tables ready.")
 # ── Insert ────────────────────────────────────────────────────────────────────
 print("\nInserting colleges...")
 cursor.executemany("""
-    INSERT IGNORE INTO colleges (college_code, college_name, status)
-    VALUES (%s, %s, %s)
+    INSERT IGNORE INTO colleges (college_code, college_name, status, division)
+    VALUES (%s, %s, %s, %s)
 """, list(colleges.values()))
+
 db.commit()
 print(f"  {cursor.rowcount} rows inserted")
 
@@ -129,7 +137,7 @@ print(f"  {cursor.rowcount} rows inserted")
 print("Inserting cutoffs...")
 cursor.executemany("""
     INSERT IGNORE INTO cutoffs
-        (branch_code, year, round, level, stage, category, rank, percentile)
+        (branch_code, year, round, level, stage, category, `rank`, percentile)
     VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 """, cutoffs)
 db.commit()

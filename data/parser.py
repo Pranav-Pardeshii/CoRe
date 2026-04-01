@@ -3,9 +3,6 @@ import csv
 import subprocess
 from pathlib import Path
 
-PDF_PATH   = ""
-OUTPUT_CSV = ""
-YEAR       = 2025
 
 ROUND_RE   = re.compile(r'^Round\s*(.+)$')
 COLLEGE_RE = re.compile(r'^(\d{5})\s*-\s*(.+)$')
@@ -71,7 +68,7 @@ def align(categories, values, tolerance=18):
             result[name] = best_val
     return result
 
-def parse_pages(pages):
+def parse_pages(pages, YEAR, ROUND):
     rows = []
 
     college_code = college_name = ""
@@ -192,6 +189,7 @@ def parse_pages(pages):
                                 "branch_name":  branch_name,
                                 "status":       status,
                                 "year":         YEAR,
+                                "round":        ROUND,
                                 "level":        level,
                                 "stage":        p_stage,
                                 "category":     cat,
@@ -205,20 +203,22 @@ def parse_pages(pages):
 
     return rows
 
-def main():
+def main(PDF_PATH, YEAR, ROUND):
+    OUTPUT_CSV = Path(__file__).parent.parent / "csvs" / f"cutoff_{YEAR}_r{ROUND}.csv"
+    
     total = get_page_count(PDF_PATH)
-    print(f"Total pages: {total}")
+    print(f"\n[{YEAR} R{ROUND}] Total pages: {total}")
 
     print(f"Extracting text from all {total} pages...")
     pages = extract_text_per_page(PDF_PATH, total)
 
     print("Parsing...")
-    rows = parse_pages(pages)
+    rows = parse_pages(pages, YEAR, ROUND)
     print(f"Extracted {len(rows):,} rows")
 
     Path(OUTPUT_CSV).parent.mkdir(parents=True, exist_ok=True)
     fieldnames = ["college_code","college_name","branch_code","branch_name",
-                  "status","year","level","stage","category","rank","percentile"]
+                  "status","year","round","level","stage","category","rank","percentile"]
     with open(OUTPUT_CSV, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -228,15 +228,13 @@ def main():
     from collections import Counter
     keys  = [(r['branch_code'], r['level'], r['stage'], r['category']) for r in rows]
     dupes = [(k, v) for k, v in Counter(keys).items() if v > 1]
-    print(f"\nDuplicate key check: {len(dupes)} dupes")
-    for d in dupes[:10]:
-        print(f"  {d}")
-
-    print(f"\nColleges : {len({r['college_code'] for r in rows})}")
+    print(f"Duplicate key check: {len(dupes)} dupes")
+    print(f"Colleges : {len({r['college_code'] for r in rows})}")
     print(f"Branches : {len({r['branch_code']  for r in rows})}")
-    print(f"Levels   : {sorted({r['level'] for r in rows})}")
-    print(f"Stage II : {sum(1 for r in rows if r['stage']=='II'):,}")
-    print(f"Missing  : rank={sum(1 for r in rows if not r['rank'])} perc={sum(1 for r in rows if not r['percentile'])}")
 
 if __name__ == "__main__":
-    main()
+    main(
+        PDF_PATH = Path(__file__).parent.parent / "PDFs" / "2025_CAP1.pdf",
+        YEAR     = 2025,
+        ROUND    = 1
+    )
