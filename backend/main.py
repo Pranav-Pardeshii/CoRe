@@ -35,10 +35,10 @@ def recommender(percentile: float, category: str, branch: str):
             ON colleges.college_code = cutoffs.college_code
             JOIN branches
             ON cutoffs.branch_code = branches.branch_code
-            WHERE cutoff_percentile <= %s
+            WHERE percentile <= %s
             AND branch_name = %s
             AND category = %s       
-            ORDER BY cutoff_percentile DESC
+            ORDER BY percentile DESC
     """, (percentile, branch, category)
     )
 
@@ -49,7 +49,7 @@ def recommender(percentile: float, category: str, branch: str):
     colleges =[{
         'college' : row[0],
         'branch' : row[1],
-        'cutoff_percentile' : row[2],
+        'percentile' : row[2],
         }
         for row in result
     ]
