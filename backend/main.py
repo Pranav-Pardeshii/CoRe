@@ -31,10 +31,10 @@ def recommender(percentile: float, category: str, branch: str):
     cursor.execute("""
             SELECT college_name, branch_name, percentile
             FROM cutoffs
-            join colleges
-            ON colleges.college_code = cutoffs.college_code
-            JOIN branches
+            join branches
             ON cutoffs.branch_code = branches.branch_code
+            JOIN colleges
+            ON branches.college_code = colleges.college_code
             WHERE percentile <= %s
             AND branch_name = %s
             AND category = %s       
