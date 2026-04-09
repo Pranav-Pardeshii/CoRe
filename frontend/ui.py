@@ -14,11 +14,11 @@ if st.button("Find Colleges"):
             "category": category,
             "branch": branch
         })
+        data = response.json()
     except Exception as e:
         st.error("Server is waking up, Please try again in few minutes.")
         st.stop()
 
-    data = response.json()
 
     if data['count'] == 0:
         st.warning("No colleges found with given data.")
