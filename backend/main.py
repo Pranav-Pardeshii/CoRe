@@ -32,9 +32,9 @@ def recommender(percentile: float, category: str, branch: str):
             SELECT college_name, branch_name, percentile
             FROM cutoffs
             join colleges
-            ON colleges.college_id = cutoffs.college_id
+            ON colleges.college_code = cutoffs.college_code
             JOIN branches
-            ON cutoffs.branch_id = branches.branch_id
+            ON cutoffs.branch_code = branches.branch_code
             WHERE cutoff_percentile <= %s
             AND branch_name = %s
             AND category = %s       
