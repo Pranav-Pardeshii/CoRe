@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 
 st.title("MHT-CET college recommender")
+st.set_page_config(page_title="CoRe - MHT-CET College Finder", page_icon="🎓", layout="centered")
 
 percentile = st.slider("Enter your percentile: ", 0, 100)
 category = st.selectbox("Select category", ['DEFOBCS', 'DEFOPENS', 'DEFRSEBCS', 'EWSS', 'GNT1S', 'GNT2S', 'GNT3S', 'GOBCS', 'GOPENS', 'GSCS', 'GSEBCS', 'GSTS', 'GVJS', 'LNT2S', 'LOBCS', 'LOPENS', 'LSCS', 'LSEBCS', 'LSTS', 'LVJS', 'PWDOBCS', 'PWDOPENS', 'PWDROBCS', 'TFWS', 'EWS', 'ORPHAN', 'DEFROBCS', 'PWDRSCS', 'LNT1S', 'LNT3S', 'PWDROBC', 'DEFROBCSS', 'ORPHANS', 'DEFRNT1S', 'DEFRNT3S', 'DEFRSEBC', 'DEFRSCS', 'GNT2H', 'GOBCH', 'GOPENH', 'GSCH', 'GSEBCH', 'GSTH', 'LOBCH', 'LOPENH', 'LSEBCH', 'GSCO', 'GVJO', 'LOPENO', 'PWDOPENH', 'GNT1O', 'GOPENO', 'GSEBCO', 'GVJH', 'LNT2H', 'GOBCO', 'LSCH', 'GSTO', 'LOBCO', 'LSCO', 'GNT3H', 'LSEBCO', 'GNT3O', 'LNT1H', 'LSTH', 'LVJH', 'GNT2O', 'LSTO', 'GNT1H', 'LNT3H', 'PWDOBCH', 'LNT2O', 'LVJO', 'LNT1O', 'LNT3O', 'PWDROBCH', 'DEFSCS', 'PWDSCH', 'DEFSEBCS', 'PWDSEBCH', 'PWDRSTS', 'PWDSCS', 'PWDSEBCS', 'PWDRNT2S', 'MI', 'PWDRSEBCS', 'DEFRVJS', 'DEFRNT2S', 'PWDRNT3S', 'DEFRNT1SS', 'DEFRNT2SS', 'PWDRSEBC', 'DEFRVJSS', 'DEFRNT3SS', 'PWDRSCH', 'PWDRSTH', 'DEFRSTS', 'PWDRSEBCH', 'DEFRSCSS', 'PWDRVJS', 'PWDRNT2H', 'PWDRNT1S', 'DEFSTS', 'PWDSTS'])
@@ -20,11 +21,16 @@ if st.button("Find Colleges"):
         st.stop()
 
 
+
     if data['count'] == 0:
         st.warning("No colleges found with given data.")
     else:
         st.success(f"Found {data['count']} eligible colleges.")
         for college in data["Eligible colleges"]:
-            st.write(f"{college['college']} - {college['branch']} ({college['min_cutoff']:.2f} - {college['max_cutoff']:.2f})")
+            st.markdown(f"""
+                **{college['college']}**  
+                {college['branch']} • Cutoff range: {college['min_cutoff']:.2f} - {college['max_cutoff']:.2f}
+                ---
+            """)
 
 
