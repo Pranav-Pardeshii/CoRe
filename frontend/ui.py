@@ -25,6 +25,6 @@ if st.button("Find Colleges"):
     else:
         st.success(f"Found {data['count']} eligible colleges.")
         for college in data["Eligible colleges"]:
-            st.write(f"**{college['college']} - {college['branch']} ({college['min_cutoff']} - {college['max_cutoff']})")
+            st.write(f"{college['college']} - {college['branch']} ({college['min_cutoff']:.2f} - {college['max_cutoff']:.2f})")
 
 
