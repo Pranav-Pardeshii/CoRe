@@ -22,4 +22,5 @@ CoRe is a tool that generates a list of colleges where you can take admission, b
    Open the URL shown in your terminal.
 
 ## Tech Stack: 
+
 Python, FastAPI, Streamlit
