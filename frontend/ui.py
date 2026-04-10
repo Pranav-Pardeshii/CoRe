@@ -10,11 +10,12 @@ branch = st.selectbox("Enter preferred branch: ", ['Artificial Intelligence and 
 
 if st.button("Find Colleges"):
     try:
-        response = requests.get("https://core-5y5r.onrender.com/recommender", params={
-            "percentile": percentile,
-            "category": category,
-            "branch": branch
-        })
+        with st.spinner("Fetching colleges"):
+            response = requests.get("https://core-5y5r.onrender.com/recommender", params={
+                "percentile": percentile,
+                "category": category,
+                "branch": branch
+            })
         data = response.json()
     except Exception as e:
         st.error("Server is waking up, Please try again in few minutes.")
