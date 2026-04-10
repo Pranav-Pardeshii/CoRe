@@ -28,7 +28,7 @@ if st.button("Find Colleges"):
         st.success(f"Found {data['count']} eligible colleges.")
         for college in data["Eligible colleges"]:
             st.markdown(f"""
-                **{college['college']}**  
+                *{college['college']}* 
                 {college['branch']} • Cutoff range: {college['min_cutoff']:.2f} - {college['max_cutoff']:.2f}
                 ---
             """)
