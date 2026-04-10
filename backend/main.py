@@ -37,13 +37,13 @@ def recommender(percentile: float, category: str, branch: str):
             ON cutoffs.branch_code = branches.branch_code
             JOIN colleges
             ON branches.college_code = colleges.college_code
-            WHERE percentile <= %s
             AND branch_name = %s
             AND category = %s   
             AND year IN(2024, 2025)    
             GROUP BY college_name, branch_name
+            HAVING MIN(percentile) <= %s
             ORDER BY max_cutoff DESC
-    """, (percentile, branch, category)
+    """, (branch, category, percentile)
     )
 
     result = cursor.fetchall()
