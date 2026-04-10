@@ -12,7 +12,7 @@ def get_db():
     db = mysql.connector.connect(
         host = os.getenv("DB_HOST"),
         user = os.getenv("DB_USER"),
-        port=int(os.getenv("DB_PORT")),
+        port= int(os.getenv("DB_PORT")),
         passwd = os.getenv("DB_PASS"),
         database = os.getenv("DB_NAME"),
         use_pure= True,
@@ -63,3 +63,30 @@ def recommender(percentile: float, category: str, branch: str, division:str):
     return{'Eligible colleges': colleges,
            'count': len(colleges)}
 
+
+@app.get('/colleges')
+def get_colleges(division: str):
+    db = get_db()
+    cursor = db.cursor()
+    division = f"%{division}%"
+    cursor.execute("""
+                    SELECT DISTINCT college_code, college_name
+                    FROM colleges 
+                    WHERE 
+                    division LIKE %s
+                   """,(division,)
+                   )
+    
+    result = cursor.fetchall()
+    cursor.close()
+    db.close()
+
+    colleges = [
+        {
+            "college_code" : row[0],
+            "college_name" : row[1]
+        }
+        for row in result
+    ]
+    return {'Total colleges': colleges,
+            'count': len(colleges)}
