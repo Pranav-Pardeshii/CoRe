@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routes import recommender, colleges
+from backend.routes import recommender, colleges
 
 
 app = FastAPI(title="CoRe - MHT-CET College Predictor")
