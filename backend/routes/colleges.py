@@ -7,13 +7,12 @@ router = APIRouter()
 def get_colleges(division: str):
     db = get_db()
     cursor = db.cursor()
-    division = f"%{division}%"
     cursor.execute("""
                     SELECT DISTINCT college_code, college_name
                     FROM colleges 
                     WHERE 
                     division LIKE %s
-                   """,(division,)
+                   """,(f"%{division}%")
                    )
     
     result = cursor.fetchall()
