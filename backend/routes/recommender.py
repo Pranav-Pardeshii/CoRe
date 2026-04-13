@@ -4,7 +4,7 @@ from backend.database import get_db
 router = APIRouter(prefix="/recommender", tags=["Recommender"])
 
 @router.get("/")
-def recommender(percentile: float, category: str, branch: str):
+def recommender(percentile: float, category: str, branch: str, division: str):
     db = get_db()
     cursor = db.cursor()
     cursor.execute("""
@@ -16,11 +16,12 @@ def recommender(percentile: float, category: str, branch: str):
         JOIN colleges ON branches.college_code = colleges.college_code
         WHERE branch_name = %s
           AND category = %s
+          AND division = %s
           AND year IN (2024, 2025)
         GROUP BY college_name, branch_name
         HAVING MIN(percentile) <= %s
         ORDER BY max_cutoff DESC
-    """, (branch, category, percentile))
+    """, (branch, category, division, percentile))
 
     result = cursor.fetchall()
     cursor.close()
