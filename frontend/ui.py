@@ -47,7 +47,7 @@ if st.button("All colleges:"):
         })
         data = response.json()
     except Exception as e:
-            st.error("Server is waking up, Please try again in few minutes.")
+            st.error(f"Error: {e}")
             st.stop()
 
     
