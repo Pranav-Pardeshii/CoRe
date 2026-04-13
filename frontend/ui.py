@@ -26,19 +26,19 @@ if st.button("Find Colleges"):
             st.stop()
 
 
-    if data['count'] == 0:
-        st.warning("No colleges found with given data.")
-    else:
-        st.success(f"Found {data['count']} eligible colleges.")
-        for i, college in enumerate(data["eligible_colleges"], start=1):
-            with st.expander(f"{i}. {college['college']}"):
-                st.markdown(f"**Branch:** {college['branch']}")
-                st.markdown(f"**Min Cutoff:** `{college['min_cutoff']:.2f}`")
-                st.markdown(f"**Max Cutoff:** `{college['max_cutoff']:.2f}`")
- 
-                cutoff_range = college['max_cutoff'] - college['min_cutoff']
-                normalized = min(college['max_cutoff'] / 100.0, 1.0)
-                st.progress(normalized, text=f"Cutoff up to {college['max_cutoff']:.2f}")
+        if data['count'] == 0:
+            st.warning("No colleges found with given data.")
+        else:
+            st.success(f"Found {data['count']} eligible colleges.")
+            for i, college in enumerate(data["eligible_colleges"], start=1):
+                with st.expander(f"{i}. {college['college']}"):
+                    st.markdown(f"**Branch:** {college['branch']}")
+                    st.markdown(f"**Min Cutoff:** `{college['min_cutoff']:.2f}`")
+                    st.markdown(f"**Max Cutoff:** `{college['max_cutoff']:.2f}`")
+    
+                    cutoff_range = college['max_cutoff'] - college['min_cutoff']
+                    normalized = min(college['max_cutoff'] / 100.0, 1.0)
+                    st.progress(normalized, text=f"Cutoff up to {college['max_cutoff']:.2f}")
 
 if st.button("All colleges:"):
     try:
