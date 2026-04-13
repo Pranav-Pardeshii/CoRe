@@ -3,7 +3,7 @@ from backend.database import get_db
 
 router = APIRouter()
 
-@router.get('/colleges')
+@router.get('/colleges', deprecated=True)
 def get_colleges(division: str):
     db = get_db()
     cursor = db.cursor()
