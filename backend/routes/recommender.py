@@ -5,6 +5,11 @@ router = APIRouter(prefix="/recommender", tags=["Recommender"])
 
 @router.get("/")
 def recommender(percentile: float, category: str, branch: str, division: str):
+
+    division = None if division == "All" else division
+    branch = None if branch == "All" else branch
+    category = None if category == "All" else category
+
     db = get_db()
     cursor = db.cursor()
     cursor.execute("""
@@ -14,14 +19,14 @@ def recommender(percentile: float, category: str, branch: str, division: str):
         FROM cutoffs
         JOIN branches ON cutoffs.branch_code = branches.branch_code
         JOIN colleges ON branches.college_code = colleges.college_code
-        WHERE branch_name = %s
-          AND category = %s
-          AND division = %s
+        WHERE (%s is NULL OR branch_name = %s)
+          AND (%s is NULL OR category = %s)
+          AND (%s is NULL OR division = %s)
           AND year IN (2024, 2025)
         GROUP BY college_name, branch_name
         HAVING MIN(percentile) <= %s
         ORDER BY max_cutoff DESC
-    """, (branch, category, division, percentile))
+    """, (branch, branch, category, category, division, division, percentile))
 
     result = cursor.fetchall()
     cursor.close()
