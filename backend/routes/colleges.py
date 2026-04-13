@@ -11,8 +11,8 @@ def get_colleges(division: str):
                     SELECT DISTINCT college_code, college_name
                     FROM colleges 
                     WHERE 
-                    division LIKE %s
-                   """,(f"%{division}%")
+                    division = %s
+                   """,(division,)
                    )
     
     result = cursor.fetchall()
