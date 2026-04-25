@@ -28,3 +28,7 @@ PDFs
 .pdf
 /PDFs
 
+# Aiven credentials
+ca.pem
+
+

@@ -11,5 +11,8 @@ def get_db():
         port=int(os.getenv("DB_PORT")),
         passwd=os.getenv("DB_PASS"),
         database=os.getenv("DB_NAME"),
+        ssl={
+            "ca":os.getenv("DB_SSL_CA")
+        }
         use_pure=True,
     )
