@@ -1,14 +1,25 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 from backend.database import get_db
+from pydantic import BaseModel, Field
+from typing import Annotated
 
 router = APIRouter(prefix="/recommender", tags=["Recommender"])
 
-@router.get("/")
-def recommender(percentile: float, category: str, branch: str, division: str):
+class RecommenderSchema(BaseModel):
+    percentile : float = Field(ge = 1, le=100)
+    category : str
+    branch : str 
+    division : str
 
-    division = None if division == "All" else division
-    branch = None if branch == "All" else branch
-    category = None if category == "All" else category
+        
+
+@router.get("/")
+def recommender(params: Annotated[RecommenderSchema , Query()]):
+
+    division = None if params.division == "All" else params.division
+    branch = None if params.branch == "All" else params.branch
+    category = None if params.category == "All" else params.category
+    percentile = params.percentile
 
     db = get_db()
     cursor = db.cursor()
@@ -43,3 +54,11 @@ def recommender(percentile: float, category: str, branch: str, division: str):
     ]
 
     return {"eligible_colleges": colleges, "count": len(colleges)}
+
+
+
+if __name__ == '__main__':
+    try:
+        RecommenderSchema(percentile=150, branch='Computer Engineering', category= 'ST', division= 'Pune')
+    except ValueError as e:
+        print(e)
