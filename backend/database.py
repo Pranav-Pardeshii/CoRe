@@ -13,6 +13,6 @@ def get_db():
         database=os.getenv("DB_NAME"),
         ssl={
             "ca":os.getenv("DB_SSL_CA")
-        }
+        },
         use_pure=True,
     )
