@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query, Depends
+from fastapi import APIRouter, Query, Depends, HTTPException
 from backend.database import get_db
 from pydantic import BaseModel, Field
 from typing import Annotated
@@ -22,24 +22,32 @@ def recommender(params: Annotated[RecommenderSchema , Query()], db = Depends(get
     percentile = params.percentile
 
     cursor = db.cursor()
-    cursor.execute("""
-        SELECT college_name, branch_name,
-               MIN(percentile) as min_cutoff,
-               MAX(percentile) as max_cutoff
-        FROM cutoffs
-        JOIN branches ON cutoffs.branch_code = branches.branch_code
-        JOIN colleges ON branches.college_code = colleges.college_code
-        WHERE (%s is NULL OR branch_name = %s)
-          AND (%s is NULL OR category = %s)
-          AND (%s is NULL OR division = %s)
-          AND year IN (2024, 2025)
-        GROUP BY college_name, branch_name
-        HAVING MIN(percentile) <= %s
-        ORDER BY max_cutoff DESC
-    """, (branch, branch, category, category, division, division, percentile))
+    try:
+        cursor.execute("""
+            SELECT college_name, branch_name,
+                MIN(percentile) as min_cutoff,
+                MAX(percentile) as max_cutoff
+            FROM cutoffs
+            JOIN branches ON cutoffs.branch_code = branches.branch_code
+            JOIN colleges ON branches.college_code = colleges.college_code
+            WHERE (%s is NULL OR branch_name = %s)
+            AND (%s is NULL OR category = %s)
+            AND (%s is NULL OR division = %s)
+            AND year IN (2024, 2025)
+            GROUP BY college_name, branch_name
+            HAVING MIN(percentile) <= %s
+            ORDER BY max_cutoff DESC
+        """, (branch, branch, category, category, division, division, percentile))
+        
+        result = cursor.fetchall()
+        
 
-    result = cursor.fetchall()
-    cursor.close()
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong, while retrieving data from database")
+    
+    finally:
+        cursor.close()
+
 
     colleges = [
         {

@@ -1,4 +1,5 @@
 import mysql.connector
+from fastapi import HTTPException
 from dotenv import load_dotenv
 import os
 from mysql.connector.pooling import MySQLConnectionPool
@@ -18,9 +19,13 @@ pool = MySQLConnectionPool(
 )
 
 def get_db():
-    db = pool.get_connection()
     try:
-        yield db
-    finally:
-        db.close()
+        db = pool.get_connection()
+        try:
+            yield db
+        finally:
+            db.close()
+    except Exception:
+        raise HTTPException(status_code=500, detail="Something went wrong, while initializing the database.")
+
 
