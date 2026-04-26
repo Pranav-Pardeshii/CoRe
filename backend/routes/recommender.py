@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 from backend.database import get_db
 from pydantic import BaseModel, Field
 from typing import Annotated
@@ -14,14 +14,13 @@ class RecommenderSchema(BaseModel):
         
 
 @router.get("/")
-def recommender(params: Annotated[RecommenderSchema , Query()]):
+def recommender(params: Annotated[RecommenderSchema , Query()], db = Depends(get_db)):
 
     division = None if params.division == "All" else params.division
     branch = None if params.branch == "All" else params.branch
     category = None if params.category == "All" else params.category
     percentile = params.percentile
 
-    db = get_db()
     cursor = db.cursor()
     cursor.execute("""
         SELECT college_name, branch_name,
@@ -41,7 +40,6 @@ def recommender(params: Annotated[RecommenderSchema , Query()]):
 
     result = cursor.fetchall()
     cursor.close()
-    db.close()
 
     colleges = [
         {
