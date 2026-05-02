@@ -3,8 +3,9 @@ from fastapi import HTTPException
 from dotenv import load_dotenv
 import os
 from mysql.connector.pooling import MySQLConnectionPool
+from pathlib import Path
 
-load_dotenv()
+load_dotenv(dotenv_path=Path(__file__).parent / ".env")
 
 pool = MySQLConnectionPool(
     pool_name='core_pool',
