@@ -26,7 +26,9 @@ def get_db():
             yield db
         finally:
             db.close()
-    except Exception:
-        raise HTTPException(status_code=500, detail="Something went wrong, while initializing the database.")
 
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise
+        raise HTTPException(status_code=500, detail="Database connection failed")
 
