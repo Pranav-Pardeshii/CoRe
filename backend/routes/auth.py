@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from backend.database import get_db
 from backend.auth import hash_password, verify_password, create_access_token
 from pydantic import BaseModel
+from fastapi.security import OAuth2PasswordRequestForm
 
 
 
@@ -30,13 +31,13 @@ def register(params: UserSchema, db = Depends(get_db)):
         cursor.close()
 
 @router.post("/login")
-def login(params: UserSchema, db = Depends(get_db)):
+def login(params: OAuth2PasswordRequestForm = Depends(), db = Depends(get_db)):
     cursor = db.cursor()
     try:
         cursor.execute("""
                         SELECT password FROM users
                         WHERE user_name = %s
-                       """, (params.user_name,))
+                       """, (params.username,))
         row = cursor.fetchone()
     except Exception:
         raise HTTPException(status_code=500, detail="Database Error!")
@@ -48,7 +49,7 @@ def login(params: UserSchema, db = Depends(get_db)):
     hashed_password = row[0]
     is_correct = verify_password(params.password, hashed_password)
     if is_correct:
-        token = create_access_token({"sub": params.user_name})
+        token = create_access_token({"sub": params.username})
         return {"access_token": token, "token_type": "bearer"}
     else:
         raise HTTPException(status_code=401, detail="wrong password")
