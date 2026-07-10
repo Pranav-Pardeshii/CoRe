@@ -27,5 +27,6 @@ Python, FastAPI, Streamlit
 
 ## Future Plans
 
-1. Trend graph 
-2. UI Update
+1. Replace pip with uv
+2. Trend graph 
+3. UI Update
