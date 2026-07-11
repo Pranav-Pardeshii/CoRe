@@ -24,3 +24,9 @@ CoRe is a tool that helps you to make a list of colleges where you can take admi
 ## Tech Stack: 
 
 Python, FastAPI, Streamlit
+
+## Future Plans
+
+1. Replace pip with uv
+2. Trend graph 
+3. UI Update
