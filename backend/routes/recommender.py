@@ -15,7 +15,8 @@ class RecommenderSchema(BaseModel):
         
 
 @router.get("/")
-def recommender(params: Annotated[RecommenderSchema , Query()], db = Depends(get_db), current_user= Depends(get_current_user)):
+def recommender(params: Annotated[RecommenderSchema , Query()], db = Depends(get_db)):
+    # User login is not required for preview
 
     division = None if params.division == "All" else params.division
     branch = None if params.branch == "All" else params.branch
