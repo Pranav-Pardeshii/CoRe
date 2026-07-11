@@ -25,6 +25,9 @@ if st.button("Find Colleges"):
             st.error(f'Error: {e}')
             st.stop()
 
+        if response.status_code != 200:
+            st.error(f"Request failed: {data.get('detail', 'Unknown error')}")
+            st.stop()
 
         if data['count'] == 0:
             st.warning("No colleges found with given data.")
