@@ -32,9 +32,9 @@ def trends(params: Annotated[TrendsSchema, Query()], db = Depends(get_db)):
     trends_list = []
     for row in result:
         trends_list.append({
-            'year': row[1],
-            'round': row[2],
-            'percentile': row[3]
+            'year': row[0],
+            'round': row[1],
+            'percentile': row[2]
         })
 
     return {'branch_code': params.branch_code, 
