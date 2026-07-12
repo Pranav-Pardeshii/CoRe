@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query, Depends, HTTPException
 from backend.database import get_db
 from pydantic import BaseModel, Field
 from typing import Annotated
-from backend.auth import get_current_user
+# from backend.auth import get_current_user
 
 router = APIRouter(prefix="/recommender", tags=["Recommender"])
 
