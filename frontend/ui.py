@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from category_labels import decode_category
 import pandas as pd
+import altair as alt
 
 API_URL_RECOMMENDER = "https://core-5y5r.onrender.com/recommender"
 API_URL_TRENDS      = "https://core-5y5r.onrender.com/trends"
@@ -92,5 +93,12 @@ if "results" in st.session_state:
                         st.info("Not enough historical data for a trend.")
                     else:
                         df = pd.DataFrame(trend_data["trends"])
-                        pivoted = df.pivot(index="round", columns="year", values="percentile")
-                        st.line_chart(pivoted)
+                        y_min = df["percentile"].min() - 1
+                        y_max = df["percentile"].max() + 1
+
+                        chart = alt.Chart(df).mark_line(point=True).encode(
+                            x="round:O",
+                            y=alt.Y("percentile:Q", scale=alt.Scale(domain=[y_min, y_max])),
+                            color="year:N",
+                        )
+                        st.altair_chart(chart, use_container_width=True)
