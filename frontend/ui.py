@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 from category_labels import decode_category
+import pandas as pd
 
 API_URL_RECOMMENDER = "https://core-5y5r.onrender.com/recommender"
 API_URL_TRENDS      = "https://core-5y5r.onrender.com/trends"
@@ -63,21 +64,33 @@ if search_clicked:
         if response.status_code != 200:
             st.error(f"Request failed: {data.get('detail', 'Unknown error')}")
             st.stop()
+        st.session_state["results"] = data
 
+if "results" in st.session_state:
+    data = st.session_state["results"]
     if data["count"] == 0:
         st.warning("No colleges matched. Try lowering your percentile or widening branch/division to 'All'.")
     else:
         st.success(f"Found {data['count']} eligible college{'s' if data['count'] != 1 else ''} for your profile.")
         st.write("")
-
         for college in data["eligible_colleges"]:
             with st.container(border=True):
                 st.markdown(f'<div class="college-name">{college["college"]}</div>', unsafe_allow_html=True)
                 st.markdown(f'<div class="college-branch">{college["branch"]}</div>', unsafe_allow_html=True)
-
                 c1, c2 = st.columns(2)
                 c1.metric("Min Cutoff", f"{college['min_cutoff']:.2f}")
                 c2.metric("Max Cutoff", f"{college['max_cutoff']:.2f}")
-
                 normalized = min(college["max_cutoff"] / 100.0, 1.0)
                 st.progress(normalized)
+                if st.button("View cutoff trend", key=college["branch_code"]):
+                    trend_response = requests.get(
+                        API_URL_TRENDS,
+                        params={"branch_code":college["branch_code"], "category":category},
+                    )
+                    trend_data = trend_response.json()
+                    if trend_data["count"] == 0:
+                        st.info("Not enough historical data for a trend.")
+                    else:
+                        df = pd.DataFrame(trend_data["trends"])
+                        pivoted = df.pivot(index="round", columns="year", values="percentile")
+                        st.line_chart(pivoted)
