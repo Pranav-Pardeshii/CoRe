@@ -26,7 +26,7 @@ def recommender(params: Annotated[RecommenderSchema , Query()], db = Depends(get
     cursor = db.cursor()
     try:
         cursor.execute("""
-            SELECT college_name, branch_name,
+            SELECT college_name, branch_name, cutoffs.branch_code,
                 MIN(percentile) as min_cutoff,
                 MAX(percentile) as max_cutoff
             FROM cutoffs
@@ -36,7 +36,7 @@ def recommender(params: Annotated[RecommenderSchema , Query()], db = Depends(get
             AND (%s is NULL OR category = %s)
             AND (%s is NULL OR division = %s)
             AND year IN (2024, 2025)
-            GROUP BY college_name, branch_name
+            GROUP BY college_name, branch_name, cutoffs.branch_code
             HAVING MIN(percentile) <= %s
             ORDER BY max_cutoff DESC
         """, (branch, branch, category, category, division, division, percentile))
@@ -55,8 +55,9 @@ def recommender(params: Annotated[RecommenderSchema , Query()], db = Depends(get
         {
             "college": row[0],
             "branch": row[1],
-            "min_cutoff": row[2],
-            "max_cutoff": row[3],
+            "branch_code": row[2],
+            "min_cutoff": row[3],
+            "max_cutoff": row[4],
         }
         for row in result
     ]
