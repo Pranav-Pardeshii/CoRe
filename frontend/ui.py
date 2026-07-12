@@ -2,7 +2,8 @@ import streamlit as st
 import requests
 from category_labels import decode_category
 
-API_URL = "https://core-5y5r.onrender.com/recommender"
+API_URL_RECOMMENDER = "https://core-5y5r.onrender.com/recommender"
+API_URL_TRENDS      = "https://core-5y5r.onrender.com/trends"
 
 CATEGORY_CODES = ['All','DEFOBCS', 'DEFOPENS', 'DEFRSEBCS', 'EWSS', 'GNT1S', 'GNT2S', 'GNT3S', 'GOBCS', 'GOPENS', 'GSCS', 'GSEBCS', 'GSTS', 'GVJS', 'LNT2S', 'LOBCS', 'LOPENS', 'LSCS', 'LSEBCS', 'LSTS', 'LVJS', 'PWDOBCS', 'PWDOPENS', 'PWDROBCS', 'TFWS', 'EWS', 'ORPHAN', 'DEFROBCS', 'PWDRSCS', 'LNT1S', 'LNT3S', 'PWDROBC', 'DEFROBCSS', 'ORPHANS', 'DEFRNT1S', 'DEFRNT3S', 'DEFRSEBC', 'DEFRSCS', 'GNT2H', 'GOBCH', 'GOPENH', 'GSCH', 'GSEBCH', 'GSTH', 'LOBCH', 'LOPENH', 'LSEBCH', 'GSCO', 'GVJO', 'LOPENO', 'PWDOPENH', 'GNT1O', 'GOPENO', 'GSEBCO', 'GVJH', 'LNT2H', 'GOBCO', 'LSCH', 'GSTO', 'LOBCO', 'LSCO', 'GNT3H', 'LSEBCO', 'GNT3O', 'LNT1H', 'LSTH', 'LVJH', 'GNT2O', 'LSTO', 'GNT1H', 'LNT3H', 'PWDOBCH', 'LNT2O', 'LVJO', 'LNT1O', 'LNT3O', 'PWDROBCH', 'DEFSCS', 'PWDSCH', 'DEFSEBCS', 'PWDSEBCH', 'PWDRSTS', 'PWDSCS', 'PWDSEBCS', 'PWDRNT2S', 'MI', 'PWDRSEBCS', 'DEFRVJS', 'DEFRNT2S', 'PWDRNT3S', 'DEFRNT1SS', 'DEFRNT2SS', 'PWDRSEBC', 'DEFRVJSS', 'DEFRNT3SS', 'PWDRSCH', 'PWDRSTH', 'DEFRSTS', 'PWDRSEBCH', 'DEFRSCSS', 'PWDRVJS', 'PWDRNT2H', 'PWDRNT1S', 'DEFSTS', 'PWDSTS']
 
@@ -11,7 +12,7 @@ BRANCHES = ['All','Artificial Intelligence and Data Science', 'Artificial Intell
 DIVISIONS = ["All", "Amravati Division", "Aurangabad Division", "Mumbai Division", "Nagpur Division", "Nashik Division", "Pune Division"]
 
 
-st.set_page_config(page_title="CoRe - MHT-CET College Finder", page_icon="🎓", layout="centered")
+st.set_page_config(page_title="CoRe - MHT-CET College Finder", page_icon="🐦‍🔥", layout="centered")
 
 st.markdown(
     """
@@ -48,7 +49,7 @@ st.write("")
 if search_clicked:
     with st.spinner("Searching colleges that match your profile..."):
         try:
-            response = requests.get(API_URL, params={
+            response = requests.get(API_URL_RECOMMENDER, params={
                 "percentile": percentile,
                 "category": category,
                 "branch": branch,
