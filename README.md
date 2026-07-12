@@ -1,63 +1,54 @@
-# CoRe
+# CoRe (College Recommendation & Analytics Platform)
 
-CoRe is a college predictor for MHT-CET (Maharashtra's engineering entrance exam). Enter your percentile and category, and it shows which colleges and branches you're realistically eligible for, based on the previous years' actual CAP round cutoff data, plus how a college's cutoff has moved across rounds and years.
+CoRe is a high-performance web application designed to help engineering aspirants navigate the complexities of the Maharashtra MHT-CET Centralized Admission Process (CAP). The platform eliminates the need to manually sift through massive, unstructured official cutoff PDFs by providing instant, filterable college recommendations and historical cutoff trend analysis.
 
-**Live app:** https://core-ui-733w.onrender.com
+**Live Application:** [core-ui-733w.onrender.com](https://core-ui-733w.onrender.com)
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Data Pipeline & Architecture](#data-pipeline--architecture)
+  - [ETL Pipeline](#1-etl-pipeline-etl)
+  - [Database Schema](#2-database-schema)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+- [Roadmap](#roadmap)
+- [License](#license)
+
+---
 
 ## Features
 
-- Search eligible colleges by percentile, category, branch, and division
-- Per-college cutoff trend graphs, split by year, across all available CAP rounds
-- Public browsing — no login required
+- **Granular College Search** — Filter eligible institutions instantly by percentile, category, specific engineering branches, and geographic divisions.
+- **Historical Trend Analytics** — Dynamic, interactive visualization of cutoff fluctuations across multiple years (2024–2025) and individual CAP rounds.
+- **Public Access Layer** — Public-facing, high-throughput browsing enabled with zero login friction.
 
-## Tech stack
+## Tech Stack
 
-- **Backend:** FastAPI, MySQL (hosted on Aiven), JWT auth (`python-jose`), Pydantic v2
-- **Frontend:** Streamlit, Altair (for trend charts)
-- **Dependency management:** [uv](https://docs.astral.sh/uv/)
+| Layer | Technology |
+|---|---|
+| Backend | FastAPI (Async REST API), Pydantic v2 (Data Validation) |
+| Database | MySQL (Hosted on Aiven) |
+| Frontend | Streamlit, Altair (Data Visualization) |
+| Environment & Package Management | uv |
 
-## Running locally
+## Data Pipeline & Architecture
 
-1. Clone the repo
-```
-git clone https://github.com/Pranav-Pardeshii/CoRe.git
-cd CoRe
-```
+### 1. ETL Pipeline (`etl/`)
 
-2. Install [uv](https://docs.astral.sh/uv/getting-started/installation/) if you don't have it, then sync dependencies:
-```
-uv sync
-```
+The core value engine of CoRe is a modular multi-stage Python ETL pipeline designed to ingest and normalize raw data from state-issued CAP round PDFs:
 
-3. Set up your environment variables. Create `backend/.env` with your database credentials:
-```
-DB_HOST=your-db-host
-DB_USER=your-db-user
-DB_PORT=your-db-port
-DB_PASS=your-db-password
-DB_NAME=your-db-name
-DB_SSL_CA=./backend/ca.pem
-```
-(You'll also need your database's CA certificate saved as `backend/ca.pem` if your provider requires SSL.)
+1. **Extraction** — Extracts erratic, tabular data from multi-page PDFs into standardized intermediate CSV structures.
+2. **Feature Engineering (Regional Mapping)** — Decodes institutional college codes to programmatically determine and inject geographic data, categorizing institutions across Maharashtra's 7 primary educational divisions based on code prefixes.
+3. **Database Ingestion** — Normalizes and upserts the processed records into the relational schema.
 
-4. Run the FastAPI backend
-```
-uv run uvicorn backend.main:app --reload
-```
+### 2. Database Schema
 
-5. In a separate terminal, run the Streamlit frontend
-```
-uv run streamlit run frontend/ui.py
-```
-Open the URL shown in your terminal.
-
-## Data
-
-Cutoff data is sourced from official MHT-CET CAP round PDFs, parsed and loaded via the scripts in `etl/`. Currently covers 2024 (3 rounds) and 2025 (4 rounds).
-
-### Database schema
-
-Three tables, normalized around `branch_code` as the shared key:
+The database is architected around a 3-tier normalized layout optimized for fast analytical lookups, maintaining data integrity via a robust composite unique constraint.
 
 ```
 colleges
@@ -69,26 +60,76 @@ colleges
 branches
 ├── branch_code    VARCHAR(15)   PRIMARY KEY
 ├── branch_name    VARCHAR(300)  NOT NULL
-└── college_code    VARCHAR(10)  NOT NULL  → FK → colleges.college_code
+└── college_code   VARCHAR(10)   NOT NULL -> FK -> colleges.college_code
 
 cutoffs
-├── id             INT           PRIMARY KEY, AUTO_INCREMENT
-├── branch_code    VARCHAR(15)   NOT NULL   → FK → branches.branch_code
+├── id             INT           PRIMARY KEY AUTO_INCREMENT
+├── branch_code    VARCHAR(15)   NOT NULL -> FK -> branches.branch_code
 ├── year           SMALLINT      NOT NULL
 ├── round          TINYINT       NOT NULL
 ├── level          VARCHAR(10)   NOT NULL
 ├── stage          VARCHAR(5)    NOT NULL
 ├── category       VARCHAR(20)   NOT NULL
-├── rank           INT           NOT NULL
+├── rank            INT           NOT NULL
 └── percentile     FLOAT         NOT NULL
 
-UNIQUE (branch_code, year, round, level, stage, category)
+UNIQUE CONSTRAINT (branch_code, year, round, level, stage, category)
 ```
 
-One row in `cutoffs` = one category's cutoff for one branch, in one specific CAP round/year. `colleges` → `branches` → `cutoffs` is a one-to-many chain, so a single college can have many branches, and each branch accumulates cutoff rows across every year/round/category combination it's been offered under.
+## Getting Started
+
+### Prerequisites
+
+Ensure you have **Python 3.10+** and **uv** installed.
+
+### Installation
+
+**1. Clone the repository**
+
+```bash
+git clone https://github.com/Pranav-Pardeshii/CoRe.git
+cd CoRe
+```
+
+**2. Install dependencies**
+
+Sync project dependencies deterministically using `uv`:
+
+```bash
+uv sync
+```
+
+**3. Environment configuration**
+
+Create a `.env` file inside the `backend/` directory with your relational database credentials:
+
+```env
+DB_HOST=your-db-host
+DB_USER=your-db-user
+DB_PORT=your-db-port
+DB_PASS=your-db-password
+DB_NAME=your-db-name
+DB_SSL_CA=./backend/ca.pem
+```
+
+> **Note:** If your database provider requires SSL, ensure your CA certificate is saved securely at `backend/ca.pem`.
+
+**4. Execution**
+
+Start the FastAPI backend:
+
+```bash
+uv run uvicorn backend.main:app --reload
+```
+
+Start the Streamlit frontend (in a separate terminal window):
+
+```bash
+uv run streamlit run frontend/ui.py
+```
 
 ## Roadmap
 
-- [ ] User accounts + saved college shortlists
-- [ ] More granular category filters (gender / home-university / caste as separate fields)
-- [ ] Additional historical years, once data formatting is normalized
+- [ ] **Stateful User Sessions** — Implement user registration and secure token-based authentication (via `python-jose` JWT) to allow personalized college shortlists.
+- [ ] **Advanced Filter Matrix** — Expand query granularities to split categories by gender, home-university allocation, and distinct sub-caste groups.
+- [ ] **Pipeline Automation** — Fully automate the multi-stage ETL process into a single-command CLI execution for future CAP round releases.
