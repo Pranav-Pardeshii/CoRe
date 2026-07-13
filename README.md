@@ -1,6 +1,6 @@
 # CoRe (College Recommendation & Analytics Platform)
 
-CoRe is a high-performance web application designed to help engineering aspirants navigate the complexities of the Maharashtra MHT-CET Centralized Admission Process (CAP). The platform eliminates the need to manually sift through massive, unstructured official cutoff PDFs by providing instant, filterable college recommendations and historical cutoff trend analysis.
+CoRe is a web application that helps engineering aspirants navigate Maharashtra's MHT-CET Centralized Admission Process (CAP). Instead of manually sifting through official cutoff PDFs, it provides instant, filterable college recommendations and historical cutoff trend analysis based on the last two years' actual CAP round data.
 
 **Live Application:** [core-ui-733w.onrender.com](https://core-ui-733w.onrender.com)
 
@@ -23,32 +23,33 @@ CoRe is a high-performance web application designed to help engineering aspirant
 
 ## Features
 
-- **Granular College Search** — Filter eligible institutions instantly by percentile, category, specific engineering branches, and geographic divisions.
-- **Historical Trend Analytics** — Dynamic, interactive visualization of cutoff fluctuations across multiple years (2024–2025) and individual CAP rounds.
-- **Public Access Layer** — Public-facing, high-throughput browsing enabled with zero login friction.
+- **Granular college search** — filter eligible institutions by percentile, category, branch, and division
+- **Historical trend analytics** — interactive cutoff-trend charts across years (2024–2025) and individual CAP rounds
+- **Public access** — browsing and searching requires no login
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Backend | FastAPI (Async REST API), Pydantic v2 (Data Validation) |
-| Database | MySQL (Hosted on Aiven) |
-| Frontend | Streamlit, Altair (Data Visualization) |
-| Environment & Package Management | uv |
+| Backend | FastAPI, Pydantic v2 (data validation) |
+| Auth | JWT (`python-jose`) — register/login endpoints exist; not currently required by any live feature |
+| Database | MySQL (hosted on Aiven) |
+| Frontend | Streamlit, Altair (data visualization) |
+| Environment & package management | uv |
 
 ## Data Pipeline & Architecture
 
 ### 1. ETL Pipeline (`etl/`)
 
-The core value engine of CoRe is a modular multi-stage Python ETL pipeline designed to ingest and normalize raw data from state-issued CAP round PDFs:
+A multi-stage Python pipeline that ingests and normalizes raw data from official CAP round PDFs:
 
-1. **Extraction** — Extracts erratic, tabular data from multi-page PDFs into standardized intermediate CSV structures.
-2. **Feature Engineering (Regional Mapping)** — Decodes institutional college codes to programmatically determine and inject geographic data, categorizing institutions across Maharashtra's 7 primary educational divisions based on code prefixes.
-3. **Database Ingestion** — Normalizes and upserts the processed records into the relational schema.
+1. **Extraction** — pulls tabular data from multi-page PDFs into intermediate CSV structures
+2. **Regional mapping** — decodes college codes to programmatically assign each institution to one of Maharashtra's 7 educational divisions
+3. **Database ingestion** — normalizes and upserts the processed records into the relational schema below
 
 ### 2. Database Schema
 
-The database is architected around a 3-tier normalized layout optimized for fast analytical lookups, maintaining data integrity via a robust composite unique constraint.
+Three tables, normalized around `branch_code`, with a composite unique constraint preventing duplicate cutoff rows:
 
 ```
 colleges
@@ -70,17 +71,19 @@ cutoffs
 ├── level          VARCHAR(10)   NOT NULL
 ├── stage          VARCHAR(5)    NOT NULL
 ├── category       VARCHAR(20)   NOT NULL
-├── rank            INT           NOT NULL
+├── rank           INT           NOT NULL
 └── percentile     FLOAT         NOT NULL
 
 UNIQUE CONSTRAINT (branch_code, year, round, level, stage, category)
 ```
 
+One row in `cutoffs` = one category's cutoff, for one branch, in one specific CAP round/year.
+
 ## Getting Started
 
 ### Prerequisites
 
-Ensure you have **Python 3.10+** and **uv** installed.
+Python 3.10+ and [uv](https://docs.astral.sh/uv/getting-started/installation/) installed.
 
 ### Installation
 
@@ -93,15 +96,13 @@ cd CoRe
 
 **2. Install dependencies**
 
-Sync project dependencies deterministically using `uv`:
-
 ```bash
 uv sync
 ```
 
 **3. Environment configuration**
 
-Create a `.env` file inside the `backend/` directory with your relational database credentials:
+Create a `.env` file inside `backend/` with your database credentials:
 
 ```env
 DB_HOST=your-db-host
@@ -112,9 +113,9 @@ DB_NAME=your-db-name
 DB_SSL_CA=./backend/ca.pem
 ```
 
-> **Note:** If your database provider requires SSL, ensure your CA certificate is saved securely at `backend/ca.pem`.
+> If your database provider requires SSL, save the CA certificate at `backend/ca.pem`.
 
-**4. Execution**
+**4. Run it**
 
 Start the FastAPI backend:
 
@@ -122,7 +123,7 @@ Start the FastAPI backend:
 uv run uvicorn backend.main:app --reload
 ```
 
-Start the Streamlit frontend (in a separate terminal window):
+In a separate terminal, start the Streamlit frontend:
 
 ```bash
 uv run streamlit run frontend/ui.py
@@ -130,6 +131,11 @@ uv run streamlit run frontend/ui.py
 
 ## Roadmap
 
-- [ ] **Stateful User Sessions** — Implement user registration and secure token-based authentication (via `python-jose` JWT) to allow personalized college shortlists.
-- [ ] **Advanced Filter Matrix** — Expand query granularities to split categories by gender, home-university allocation, and distinct sub-caste groups.
-- [ ] **Pipeline Automation** — Fully automate the multi-stage ETL process into a single-command CLI execution for future CAP round releases.
+- [ ] **Saved shortlists** — wire the existing JWT auth into the frontend so logged-in users can save colleges to a personal list
+- [ ] **Finer category filters** — split categories by gender, home-university allocation, and caste as separate selectable fields instead of one combined code
+- [ ] **Pipeline automation** — a single-command CLI for ingesting future CAP round releases
+- [ ] **More historical years** — pending normalization of older data formats (2023 and earlier don't yet match the current schema)
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
