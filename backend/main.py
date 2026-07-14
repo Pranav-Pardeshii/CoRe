@@ -13,7 +13,7 @@ app.include_router(auth.router)
 def home():
     return {"message": "MHT-CET College Predictor"}
 
-@app.route("/ping", methods=["GET", "HEAD"])
+@app.api_route("/ping", methods=["GET", "HEAD"])
 def ping(db = Depends(get_db)):
     with db.cursor() as cursor:
         cursor.execute("SELECT 1;")
