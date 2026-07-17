@@ -6,7 +6,7 @@ from typing import Annotated
 router = APIRouter(prefix="/trends", tags=["Trends"] )
 
 class TrendsSchema(BaseModel):
-    branch_code : int
+    branch_code : str
     category : str
 
 @router.get("/")
