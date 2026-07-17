@@ -7,20 +7,21 @@ router = APIRouter(prefix="/trends", tags=["Trends"] )
 
 class TrendsSchema(BaseModel):
     branch_code : str
-    category : str
+    category : str 
 
 @router.get("/")
 def trends(params: Annotated[TrendsSchema, Query()], db = Depends(get_db)):
+    category = None if params.category == 'All' else params.category
     cursor = db.cursor()
     try:
         cursor.execute("""
             SELECT year, round, percentile
             FROM cutoffs
             WHERE cutoffs.branch_code = %s
-                AND category = %s
+                AND (%s is NULL OR category = %s)
                 AND stage = 'I'
             ORDER BY year, round
-            """, (params.branch_code, params.category))
+            """, (params.branch_code, category, category))
         
         result = cursor.fetchall()
 
