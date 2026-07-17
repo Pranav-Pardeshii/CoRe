@@ -18,7 +18,7 @@ def trends(params: Annotated[TrendsSchema, Query()], db = Depends(get_db)):
             SELECT year, round, percentile
             FROM cutoffs
             WHERE cutoffs.branch_code = %s
-                AND %s
+                AND category = %s
                 AND stage = 'I'
             ORDER BY year, round
             """, (params.branch_code, category))
