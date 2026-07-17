@@ -36,6 +36,7 @@ def recommender(params: Annotated[RecommenderSchema , Query()], db = Depends(get
             AND (%s is NULL OR category = %s)
             AND (%s is NULL OR division = %s)
             AND year IN (2024, 2025)
+            AND stage = 'I'
             GROUP BY college_name, branch_name, cutoffs.branch_code
             HAVING MIN(percentile) <= %s
             ORDER BY max_cutoff DESC
