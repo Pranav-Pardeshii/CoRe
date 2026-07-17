@@ -18,6 +18,7 @@ def trends(params: Annotated[TrendsSchema, Query()], db = Depends(get_db)):
             FROM cutoffs
             WHERE cutoffs.branch_code = %s
                 AND category = %s
+                AND stage = 'I'
             ORDER BY year, round
             """, (params.branch_code, params.category))
         
