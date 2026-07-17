@@ -89,7 +89,9 @@ if "results" in st.session_state:
                         params={"branch_code":college["branch_code"], "category":category},
                     )
                     trend_data = trend_response.json()
-                    if trend_data["count"] == 0:
+                    if trend_response.status_code != 200:
+                        st.error(f"Couldn't load trend: {trend_data.get('detail', 'Unknown error')}")
+                    elif trend_data["count"] == 0:
                         st.info("Not enough historical data for a trend.")
                     else:
                         df = pd.DataFrame(trend_data["trends"])
