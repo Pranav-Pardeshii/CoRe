@@ -11,17 +11,17 @@ class TrendsSchema(BaseModel):
 
 @router.get("/")
 def trends(params: Annotated[TrendsSchema, Query()], db = Depends(get_db)):
-    category = None if params.category == 'All' else params.category
+    category = "GOPENS" if params.category == 'All' else params.category
     cursor = db.cursor()
     try:
         cursor.execute("""
             SELECT year, round, percentile
             FROM cutoffs
             WHERE cutoffs.branch_code = %s
-                AND (%s is NULL OR category = %s)
+                AND %s
                 AND stage = 'I'
             ORDER BY year, round
-            """, (params.branch_code, category, category))
+            """, (params.branch_code, category))
         
         result = cursor.fetchall()
 
