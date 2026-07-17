@@ -38,7 +38,7 @@ st.markdown('<p class="core-subtitle">Find engineering colleges you\'re eligible
 with st.container(border=True):
     col1, col2 = st.columns(2)
     with col1:
-        percentile = st.number_input("Your percentile", min_value=0.0, max_value=100.0, step=0.01, format="%.2f")
+        percentile = st.number_input("Your percentile", min_value=0.0, max_value=100.0, step=1.0, format="%.2f")
         branch = st.selectbox("Preferred branch", BRANCHES)
     with col2:
         category = st.selectbox("Your category", CATEGORY_CODES, format_func=decode_category)
