@@ -46,6 +46,7 @@ def recommender(params: Annotated[RecommenderSchema , Query()], db = Depends(get
         
 
     except Exception:
+        db.rollback()
         raise HTTPException(status_code=500, detail="Something went wrong, while retrieving data from database")
     
     finally:

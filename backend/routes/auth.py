@@ -25,6 +25,7 @@ def register(params: UserSchema, db = Depends(get_db)):
         return {"message": "User registered successfully."}
 
     except Exception:
+        db.rollback()
         raise HTTPException(status_code=400, detail="Username already exists.")
     
     finally:
@@ -40,6 +41,7 @@ def login(params: OAuth2PasswordRequestForm = Depends(), db = Depends(get_db)):
                        """, (params.username,))
         row = cursor.fetchone()
     except Exception:
+        db.rollback()
         raise HTTPException(status_code=500, detail="Database Error!")
     finally: 
         cursor.close()

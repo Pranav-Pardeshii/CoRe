@@ -26,6 +26,7 @@ def trends(params: Annotated[TrendsSchema, Query()], db = Depends(get_db)):
         result = cursor.fetchall()
 
     except Exception:
+        db.rollback()
         raise HTTPException(status_code=500, detail="Something went wrong, while retrieving data from database")
 
     finally:
