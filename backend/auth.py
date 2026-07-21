@@ -35,7 +35,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         payload = decode_access_token(token)
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-    user_name = payload.get("sub")
-    if not user_name:
+    user_id = payload.get("sub")
+    if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token payload")
-    return user_name
+    return user_id
