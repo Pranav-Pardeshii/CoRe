@@ -3,6 +3,7 @@ from backend.database import get_db
 from backend.auth import hash_password, verify_password, create_access_token
 from pydantic import BaseModel
 from fastapi.security import OAuth2PasswordRequestForm
+from mysql.connector.errors import IntegrityError 
 
 
 
@@ -24,9 +25,13 @@ def register(params: UserSchema, db = Depends(get_db)):
         db.commit()
         return {"message": "User registered successfully."}
 
-    except Exception:
+    except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=400, detail="Username already exists.")
+    
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="An uknown error occured!")
     
     finally:
         cursor.close()
@@ -36,22 +41,22 @@ def login(params: OAuth2PasswordRequestForm = Depends(), db = Depends(get_db)):
     cursor = db.cursor()
     try:
         cursor.execute("""
-                        SELECT password FROM users
+                        SELECT id, password FROM users
                         WHERE user_name = %s
                        """, (params.username,))
-        row = cursor.fetchone()
+        result = cursor.fetchone()
     except Exception:
         db.rollback()
         raise HTTPException(status_code=500, detail="Database Error!")
     finally: 
         cursor.close()
     
-    if not row:
+    if not result:
         raise HTTPException(status_code=404, detail="User not found!")
-    hashed_password = row[0]
+    user_id, hashed_password = result
     is_correct = verify_password(params.password, hashed_password)
     if is_correct:
-        token = create_access_token({"sub": params.username})
+        token = create_access_token({"sub": params.username, "user_id": user_id})
         return {"access_token": token, "token_type": "bearer"}
     else:
         raise HTTPException(status_code=401, detail="wrong password")
