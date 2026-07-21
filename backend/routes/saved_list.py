@@ -60,6 +60,24 @@ def saved_list(params: SavedListSchema, db = Depends(get_db), current_user = Dep
     finally:
         cursor.close()
 
-# # Delete an Item from the list
-# @router.delete("/")
-# def delete_saved_branch()
+# Delete an Item from the list
+@router.delete("/{id}")
+def delete_saved_college(id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
+    cursor = db.cursor()
+    try:
+        cursor.execute("DELETE FROM saved_list WHERE id = %s AND user_id = %s", (id, int(current_user)))
+        db.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Item not found!")
+        return {"message":"Item deleted successfully!"}
+    
+    except HTTPException:
+        db.rollback()
+        raise
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="An unexpected error occured!")
+    finally:
+        cursor.close()
+
+ 
