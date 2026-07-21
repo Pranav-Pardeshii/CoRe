@@ -56,7 +56,7 @@ def login(params: OAuth2PasswordRequestForm = Depends(), db = Depends(get_db)):
     user_id, hashed_password = result
     is_correct = verify_password(params.password, hashed_password)
     if is_correct:
-        token = create_access_token({"sub": params.username, "user_id": user_id})
+        token = create_access_token({"sub": str(user_id), "user_name": params.user_name})
         return {"access_token": token, "token_type": "bearer"}
     else:
         raise HTTPException(status_code=401, detail="wrong password")
