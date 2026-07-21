@@ -10,6 +10,7 @@ class SavedListSchema(BaseModel):
     branch_code: str
     college_code: str
 
+#Add an Item to the list
 @router.post("/")
 def saved_list(params: SavedListSchema, db = Depends(get_db), current_user = Depends(get_current_user)):
     cursor = db.cursor()
@@ -29,22 +30,10 @@ def saved_list(params: SavedListSchema, db = Depends(get_db), current_user = Dep
             college_name, branch_name = result
         else:
             raise HTTPException(status_code=400, detail="Invalid college_code or branch_code!")
-
-        #get_current_user returns user_name, and our table uses user_id FK which references to the id in the users
-        #This query is used to get user_id from user_name
-        cursor.execute("""
-                       SELECT user_id FROM users
-                       WHERE user_name = %s
-                       """,(current_user,))
-        result = cursor.fetchone()
-        if result:
-            user_id = result[0]
-        else:
-            raise HTTPException(status_code=500, detail="Authenticated user not found in database")
-        
+  
         #Get Current max Rank
         #To assign the rank value to the new entry
-        cursor.execute("SELECT MAX(`rank`) from saved_list WHERE user_id = %s",(user_id,))
+        cursor.execute("SELECT MAX(`rank`) from saved_list WHERE user_id = %s",(current_user,))
         result = cursor.fetchone()[0]
         rank = 1 if result is None else result + 1
 
@@ -52,7 +41,7 @@ def saved_list(params: SavedListSchema, db = Depends(get_db), current_user = Dep
         cursor.execute("""
                        INSERT INTO saved_list (user_id, college_code, branch_code, college_name, branch_name, `rank`)
                        VALUES (%s, %s, %s, %s, %s, %s)
-                       """, (user_id , params.college_code, params.branch_code, college_name, branch_name, rank)) 
+                       """, (current_user , params.college_code, params.branch_code, college_name, branch_name, rank)) 
         db.commit()
         return{"message":"Item saved successfully."}
     
@@ -70,3 +59,7 @@ def saved_list(params: SavedListSchema, db = Depends(get_db), current_user = Dep
     
     finally:
         cursor.close()
+
+# # Delete an Item from the list
+# @router.delete("/")
+# def delete_saved_branch()
