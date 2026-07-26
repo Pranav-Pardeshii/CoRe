@@ -83,3 +83,17 @@ def delete_saved_college(id: int, db = Depends(get_db), current_user = Depends(g
     finally:
         cursor.close()
 
+# Update the database for the new rank
+@router.put("/")
+def reorder(params: ReorderSchema, db = Depends(get_db), current_user = Depends(get_current_user)):
+    cursor = db.cursor()
+    try:
+        for index, id in enumerate(params.ordered_list):
+            new_rank = index + 1
+            cursor.execute("UPDATE saved_list SET rank = %s WHERE id = %s AND user_id = %s", (new_rank, id, current_user))
+        db.commit()
+        return {"message":"Bingo! list reordered successfully!"}
+
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="An unexpected error occured while updating the list! Please retry...")
