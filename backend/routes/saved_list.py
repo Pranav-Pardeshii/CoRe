@@ -104,3 +104,28 @@ def reorder(params: ReorderSchema, db = Depends(get_db), current_user = Depends(
         raise HTTPException(status_code=500, detail="An unexpected error occured while updating the list! Please retry...")
     finally:
         cursor.close()
+
+# Get the saved_list 
+@router.get("/")
+def saved_list(db = Depends(get_db), current_user = Depends(get_current_user)):
+    cursor = db.cursor()
+    try:
+        cursor.execute("SELECT college_name, branch_name FROM saved_list WHERE user_id = %s ORDER BY `rank` ASC", (int(current_user),))
+        if cursor.rowcount == 0:
+            return {"saved_list":[]}
+        result = cursor.fetchall()
+        saved_colleges = [
+            {
+                'college_name' : row[0],
+                'branch_name' : row[1]
+            }
+            for row in result
+        ]
+
+        return {"saved_list":saved_colleges}
+
+    except Exception:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="An unexpected error occured!")
+    finally:
+        cursor.close()
