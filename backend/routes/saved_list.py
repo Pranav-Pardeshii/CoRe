@@ -10,6 +10,9 @@ class SavedListSchema(BaseModel):
     branch_code: str
     college_code: str
 
+class ReorderSchema(BaseModel):
+    ordered_list: list[int]
+
 #Add an Item to the list
 @router.post("/")
 def saved_list(params: SavedListSchema, db = Depends(get_db), current_user = Depends(get_current_user)):
@@ -80,4 +83,3 @@ def delete_saved_college(id: int, db = Depends(get_db), current_user = Depends(g
     finally:
         cursor.close()
 
- 
