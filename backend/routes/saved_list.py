@@ -90,10 +90,17 @@ def reorder(params: ReorderSchema, db = Depends(get_db), current_user = Depends(
     try:
         for index, id in enumerate(params.ordered_list):
             new_rank = index + 1
-            cursor.execute("UPDATE saved_list SET rank = %s WHERE id = %s AND user_id = %s", (new_rank, id, current_user))
+            cursor.execute("UPDATE saved_list SET `rank` = %s WHERE id = %s AND user_id = %s", (new_rank, id, int(current_user)))
+            if cursor.rowcount != 1:
+                raise HTTPException(status_code=404, detail="Invalid Input!")
         db.commit()
         return {"message":"Bingo! list reordered successfully!"}
 
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception:
         db.rollback()
         raise HTTPException(status_code=500, detail="An unexpected error occured while updating the list! Please retry...")
+    finally:
+        cursor.close()
