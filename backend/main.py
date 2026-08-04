@@ -14,7 +14,8 @@ app.include_router(saved_list.router)
 def home():
     return {"message": "MHT-CET College Predictor"}
 
-@app.api_route("/ping", methods=["GET", "HEAD"])
+# This function is used to keep the server awake - Aiven and render using uptimerobot
+@app.api_route("/ping", methods=["GET", "HEAD"]) # ping endpoint decorator
 def ping(db = Depends(get_db)):
     with db.cursor() as cursor:
         cursor.execute("SELECT 1;")
