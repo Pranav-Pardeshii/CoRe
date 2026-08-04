@@ -31,4 +31,5 @@ PDFs
 # Aiven credentials
 ca.pem
 
-
+# Postman 
+.postman
