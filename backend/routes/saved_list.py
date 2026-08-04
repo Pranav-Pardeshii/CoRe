@@ -13,12 +13,12 @@ class SavedListSchema(BaseModel):
 class ReorderSchema(BaseModel):
     ordered_list: list[int]
 
-#Add an Item to the list
+# Add an Item to the list
 @router.post("/")
 def saved_list(params: SavedListSchema, db = Depends(get_db), current_user = Depends(get_current_user)):
     cursor = db.cursor()
     try:
-        #Get college_name and branch_name from college_code to store them denormalized into saved_list
+        # Get college_name and branch_name from college_code to store them denormalized into saved_list
         cursor.execute("""
                        SELECT college_name, branch_name 
                        FROM colleges

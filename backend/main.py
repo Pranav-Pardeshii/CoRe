@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends
-from backend.routes import recommender, auth, trends
+from backend.routes import recommender, auth, trends, saved_list
 from backend.database import get_db
 
 
@@ -8,6 +8,7 @@ app = FastAPI(title="CoRe - MHT-CET College Predictor")
 app.include_router(recommender.router)
 app.include_router(trends.router)
 app.include_router(auth.router)
+app.include_router(saved_list.router)
 
 @app.get("/")
 def home():
