@@ -8,7 +8,7 @@ from mysql.connector.errors import IntegrityError
 
 
 class UserSchema(BaseModel):
-    user_name: str
+    username: str
     password: str
 
 router = APIRouter(prefix= "/auth", tags=["Authentication"])
@@ -19,9 +19,9 @@ def register(params: UserSchema, db = Depends(get_db)):
     hashed_password = hash_password(params.password)
     try:
         cursor.execute("""
-                        INSERT INTO users(user_name, password)
+                        INSERT INTO users(username, password)
                         VALUES (%s, %s)
-                       """, (params.user_name, hashed_password,))
+                       """, (params.username, hashed_password,))
         db.commit()
         return {"message": "User registered successfully."}
 
@@ -42,7 +42,7 @@ def login(params: OAuth2PasswordRequestForm = Depends(), db = Depends(get_db)):
     try:
         cursor.execute("""
                         SELECT id, password FROM users
-                        WHERE user_name = %s
+                        WHERE username = %s
                        """, (params.username,))
         result = cursor.fetchone()
     except Exception:
@@ -56,7 +56,7 @@ def login(params: OAuth2PasswordRequestForm = Depends(), db = Depends(get_db)):
     user_id, hashed_password = result
     is_correct = verify_password(params.password, hashed_password)
     if is_correct:
-        token = create_access_token({"sub": str(user_id), "user_name": params.user_name})
+        token = create_access_token({"sub": str(user_id), "username": params.username})
         return {"access_token": token, "token_type": "bearer"}
     else:
         raise HTTPException(status_code=401, detail="wrong password")
