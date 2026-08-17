@@ -24,6 +24,7 @@ def save_college(branch_code: str):
         st.toast("Saved to your list.", icon="✅")
         # force the sidebar list to refetch next render
         st.session_state.pop("saved_list_cache", None)
+        st.rerun()
 
 
 def _fetch_saved_list():

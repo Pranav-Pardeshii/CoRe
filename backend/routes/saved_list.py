@@ -86,13 +86,20 @@ def delete_item(id: int, db = Depends(get_db), current_user = Depends(get_curren
 def reorder(params: ReorderSchema, db = Depends(get_db), current_user = Depends(get_current_user)):
     cursor = db.cursor()
     try:
+        # Validate every id in the request actually belongs to this user, up front
+        cursor.execute("SELECT id FROM saved_list WHERE user_id = %s", (int(current_user),))
+        owned_ids = {row[0] for row in cursor.fetchall()}
+
+        if set(params.ordered_list) != owned_ids:
+            raise HTTPException(status_code=400, detail="Invalid Input!")
+
         for index, id in enumerate(params.ordered_list):
             new_rank = index + 1
             cursor.execute("UPDATE saved_list SET `rank` = %s WHERE id = %s AND user_id = %s", (new_rank, id, int(current_user)))
-            if cursor.rowcount != 1:
-                raise HTTPException(status_code=404, detail="Invalid Input!")
+            # no rowcount check here anymore — ownership already verified above
+
         db.commit()
-        return {"message":"Bingo! list reordered successfully!"}
+        return {"message": "Bingo! list reordered successfully!"}
 
     except HTTPException:
         db.rollback()
