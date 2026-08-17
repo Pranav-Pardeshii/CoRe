@@ -13,6 +13,7 @@ BRANCHES = ['All','Artificial Intelligence and Data Science', 'Artificial Intell
 
 DIVISIONS = ["All", "Amravati Division", "Aurangabad Division", "Mumbai Division", "Nagpur Division", "Nashik Division", "Pune Division"]
 
+PAGE_SIZE = 10  # must satisfy backend's ge=5, le=30
 
 st.set_page_config(page_title="CoRe - MHT-CET College Finder", page_icon="🐦‍🔥", layout="centered")
 
@@ -35,6 +36,20 @@ st.markdown(
 st.title("CoRe")
 st.markdown('<p class="core-subtitle">Find engineering colleges you\'re eligible for, based on your MHT-CET percentile.</p>', unsafe_allow_html=True)
 
+
+def fetch_page(filters: dict, page: int):
+    """Hits /recommender with the given filters + page, stores result + filters + page in session_state."""
+    params = {**filters, "page": page, "page_size": PAGE_SIZE}
+    response = requests.get(API_URL_RECOMMENDER, params=params, timeout=15)
+    data = response.json()
+    if response.status_code != 200:
+        st.error(f"Request failed: {data.get('detail', 'Unknown error')}")
+        return
+    st.session_state["results"] = data
+    st.session_state["current_page"] = page
+    st.session_state["active_filters"] = filters
+
+
 with st.container(border=True):
     col1, col2 = st.columns(2)
     with col1:
@@ -50,29 +65,26 @@ st.write("")
 
 if search_clicked:
     with st.spinner("Searching colleges that match your profile..."):
+        filters = {
+            "percentile": percentile,
+            "category": category,
+            "branch": branch,
+            "division": division,
+        }
         try:
-            response = requests.get(API_URL_RECOMMENDER, params={
-                "percentile": percentile,
-                "category": category,
-                "branch": branch,
-                "division": division,
-            }, timeout=15)
-            data = response.json()
+            fetch_page(filters, page=1)  # new search always starts at page 1
         except Exception as e:
             st.error(f"Couldn't reach the server: {e}")
             st.stop()
 
-        if response.status_code != 200:
-            st.error(f"Request failed: {data.get('detail', 'Unknown error')}")
-            st.stop()
-        st.session_state["results"] = data
-
 if "results" in st.session_state:
     data = st.session_state["results"]
-    if data["count"] == 0:
+    total = data["count"]
+
+    if total == 0:
         st.warning("No colleges matched. Try lowering your percentile or widening branch/division to 'All'.")
     else:
-        st.success(f"Found {data['count']} eligible college{'s' if data['count'] != 1 else ''} for your profile.")
+        st.success(f"Found {total} eligible college{'s' if total != 1 else ''} for your profile.")
         st.write("")
         for college in data["eligible_colleges"]:
             with st.container(border=True):
@@ -86,7 +98,7 @@ if "results" in st.session_state:
                 if st.button("View cutoff trend", key=college["branch_code"]):
                     trend_response = requests.get(
                         API_URL_TRENDS,
-                        params={"branch_code":college["branch_code"], "category":category},
+                        params={"branch_code": college["branch_code"], "category": category},
                     )
                     trend_data = trend_response.json()
                     if trend_response.status_code != 200:
@@ -104,3 +116,25 @@ if "results" in st.session_state:
                             color="year:N",
                         )
                         st.altair_chart(chart, use_container_width=True)
+
+        # --- Pagination controls ---
+        current_page = st.session_state["current_page"]
+        total_pages = -(-total // PAGE_SIZE)  # ceil division, no extra import needed
+
+        st.write("")
+        nav_col1, nav_col2, nav_col3 = st.columns([1, 2, 1])
+        with nav_col1:
+            if current_page > 1:
+                if st.button("← Previous", use_container_width=True):
+                    fetch_page(st.session_state["active_filters"], page=current_page - 1)
+                    st.rerun()
+        with nav_col2:
+            st.markdown(
+                f"<div style='text-align:center; color:#6b7280;'>Page {current_page} of {total_pages}</div>",
+                unsafe_allow_html=True,
+            )
+        with nav_col3:
+            if current_page < total_pages:
+                if st.button("Next →", use_container_width=True):
+                    fetch_page(st.session_state["active_filters"], page=current_page + 1)
+                    st.rerun()
