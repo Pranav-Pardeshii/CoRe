@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 from category_labels import decode_category
+from auth_ui import render_auth_sidebar, is_logged_in, get_token
 import pandas as pd
 import altair as alt
 
@@ -32,6 +33,8 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+
+render_auth_sidebar()
 
 st.title("CoRe")
 st.markdown('<p class="core-subtitle">Find engineering colleges you\'re eligible for, based on your MHT-CET percentile.</p>', unsafe_allow_html=True)
