@@ -8,7 +8,6 @@ router = APIRouter(prefix='/saved-lists', tags=['Saved List'])
 
 class SavedListSchema(BaseModel):
     branch_code: str
-    college_code: str
 
 class ReorderSchema(BaseModel):
     ordered_list: list[int]
@@ -21,12 +20,11 @@ def create_item(params: SavedListSchema, db = Depends(get_db), current_user = De
         # Get college_name and branch_name from college_code to store them denormalized into saved_list
         cursor.execute("""
                        SELECT college_name, branch_name 
-                       FROM colleges
-                       INNER JOIN branches
+                       FROM branches
+                       INNER JOIN colleges
                             ON branches.college_code = colleges.college_code
-                       WHERE colleges.college_code = %s
-                            AND branch_code = %s
-                       """, (params.college_code, params.branch_code))
+                       WHERE branch_code = %s
+                       """, (params.branch_code))
         
         result = cursor.fetchone()
         if result:
