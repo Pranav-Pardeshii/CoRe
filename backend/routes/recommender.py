@@ -48,7 +48,7 @@ def recommender(params: Annotated[RecommenderSchema , Query()], db = Depends(get
         count = cursor.fetchone()[0]
 
         if count == 0:
-            return {"eligible_colleges": "No eligible colleges found for given parameters! Try changing them...", "count": 0}
+            return {"eligible_colleges": [], "count": 0}
     
         cursor.execute("""
             SELECT college_name, branch_name, cutoffs.branch_code,
