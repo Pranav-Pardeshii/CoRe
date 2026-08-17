@@ -15,7 +15,7 @@ class ReorderSchema(BaseModel):
 
 # Add an Item to the list
 @router.post("/")
-def saved_list(params: SavedListSchema, db = Depends(get_db), current_user = Depends(get_current_user)):
+def create_item(params: SavedListSchema, db = Depends(get_db), current_user = Depends(get_current_user)):
     cursor = db.cursor()
     try:
         # Get college_name and branch_name from college_code to store them denormalized into saved_list
@@ -65,7 +65,7 @@ def saved_list(params: SavedListSchema, db = Depends(get_db), current_user = Dep
 
 # Delete an Item from the list
 @router.delete("/{id}")
-def delete_saved_college(id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
+def delete_item(id: int, db = Depends(get_db), current_user = Depends(get_current_user)):
     cursor = db.cursor()
     try:
         cursor.execute("DELETE FROM saved_list WHERE id = %s AND user_id = %s", (id, int(current_user)))
@@ -107,17 +107,18 @@ def reorder(params: ReorderSchema, db = Depends(get_db), current_user = Depends(
 
 # Get the saved_list 
 @router.get("/")
-def saved_list(db = Depends(get_db), current_user = Depends(get_current_user)):
+def get_saved_list(db = Depends(get_db), current_user = Depends(get_current_user)):
     cursor = db.cursor()
     try:
-        cursor.execute("SELECT college_name, branch_name FROM saved_list WHERE user_id = %s ORDER BY `rank` ASC", (int(current_user),))
+        cursor.execute("SELECT id, college_name, branch_name FROM saved_list WHERE user_id = %s ORDER BY `rank` ASC", (int(current_user),))
         if cursor.rowcount == 0:
             return {"saved_list":[]}
         result = cursor.fetchall()
         saved_colleges = [
             {
-                'college_name' : row[0],
-                'branch_name' : row[1]
+                'id' : row[0],
+                'college_name' : row[1],
+                'branch_name' : row[2]
             }
             for row in result
         ]
