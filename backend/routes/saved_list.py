@@ -19,16 +19,16 @@ def create_item(params: SavedListSchema, db = Depends(get_db), current_user = De
     try:
         # Get college_name and branch_name from college_code to store them denormalized into saved_list
         cursor.execute("""
-                       SELECT college_name, branch_name 
+                       SELECT colleges.college_code, college_name, branch_name 
                        FROM branches
                        INNER JOIN colleges
                             ON branches.college_code = colleges.college_code
                        WHERE branch_code = %s
-                       """, (params.branch_code))
+                       """, (params.branch_code,))
         
         result = cursor.fetchone()
         if result:
-            college_name, branch_name = result
+            college_code, college_name, branch_name = result
         else:
             raise HTTPException(status_code=400, detail="Invalid college_code or branch_code!")
   
@@ -42,7 +42,7 @@ def create_item(params: SavedListSchema, db = Depends(get_db), current_user = De
         cursor.execute("""
                        INSERT INTO saved_list (user_id, college_code, branch_code, college_name, branch_name, `rank`)
                        VALUES (%s, %s, %s, %s, %s, %s)
-                       """, (current_user , params.college_code, params.branch_code, college_name, branch_name, rank)) 
+                       """, (current_user , college_code, params.branch_code, college_name, branch_name, rank)) 
         db.commit()
         return{"message":"Item saved successfully."}
     
