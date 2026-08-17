@@ -28,7 +28,28 @@ def recommender(params: Annotated[RecommenderSchema , Query()], db = Depends(get
     percentile = params.percentile
 
     cursor = db.cursor()
+
     try:
+        cursor.execute("""
+            SELECT COUNT(*) FROM (
+                SELECT college_name, branch_name, cutoffs.branch_code
+                FROM cutoffs
+                JOIN branches ON cutoffs.branch_code = branches.branch_code
+                JOIN colleges ON branches.college_code = colleges.college_code
+                WHERE (%s IS NULL OR branch_name = %s)
+                AND (%s IS NULL OR category = %s)
+                AND (%s IS NULL OR division = %s)
+                AND year IN (2024, 2025)
+                AND stage = 'I'
+                GROUP BY college_name, branch_name, cutoffs.branch_code
+                HAVING MIN(percentile) <= %s
+                ) AS counted""",(branch, branch, category, category, division, division, percentile))
+
+        count = cursor.fetchone()
+
+        if count == 0:
+            return {"eligible_colleges": "No eligible colleges found for given parameters! Try changing them...", "count": 0}
+    
         cursor.execute("""
             SELECT college_name, branch_name, cutoffs.branch_code,
                 MIN(percentile) as min_cutoff,
@@ -69,7 +90,7 @@ def recommender(params: Annotated[RecommenderSchema , Query()], db = Depends(get
         for row in result
     ]
 
-    return {"eligible_colleges": colleges, "count": len(colleges)}
+    return {"eligible_colleges": colleges, "count": count}
 
 
 
