@@ -45,7 +45,7 @@ def recommender(params: Annotated[RecommenderSchema , Query()], db = Depends(get
                 HAVING MIN(percentile) <= %s
                 ) AS counted""",(branch, branch, category, category, division, division, percentile))
 
-        count = cursor.fetchone()
+        count = cursor.fetchone()[0]
 
         if count == 0:
             return {"eligible_colleges": "No eligible colleges found for given parameters! Try changing them...", "count": 0}
