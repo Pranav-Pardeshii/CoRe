@@ -34,3 +34,6 @@ ca.pem
 # Postman 
 .postman
 postman
+
+# test
+test.py

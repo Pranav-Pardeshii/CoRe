@@ -11,6 +11,8 @@ class RecommenderSchema(BaseModel):
     category : str
     branch : str 
     division : str
+    page: int = Field(default=1, ge=1)
+    page_size : int = Field(default=10, ge=5, le=30)
 
         
 
@@ -18,6 +20,8 @@ class RecommenderSchema(BaseModel):
 def recommender(params: Annotated[RecommenderSchema , Query()], db = Depends(get_db)):
     # User login is not required for preview
 
+    limit = params.page_size
+    offset = (params.page-1)*limit
     division = None if params.division == "All" else params.division
     branch = None if params.branch == "All" else params.branch
     category = None if params.category == "All" else params.category
@@ -40,7 +44,8 @@ def recommender(params: Annotated[RecommenderSchema , Query()], db = Depends(get
             GROUP BY college_name, branch_name, cutoffs.branch_code
             HAVING MIN(percentile) <= %s
             ORDER BY max_cutoff DESC
-        """, (branch, branch, category, category, division, division, percentile))
+            LIMIT %s OFFSET %s
+        """, (branch, branch, category, category, division, division, percentile, limit, offset))
         
         result = cursor.fetchall()
         
