@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from category_labels import decode_category
 from auth_ui import render_auth_sidebar, is_logged_in, get_token
+from saved_list_ui import render_saved_list_sidebar, save_college
 import pandas as pd
 import altair as alt
 
@@ -35,6 +36,7 @@ st.markdown(
 )
 
 render_auth_sidebar()
+render_saved_list_sidebar()
 
 st.title("CoRe")
 st.markdown('<p class="core-subtitle">Find engineering colleges you\'re eligible for, based on your MHT-CET percentile.</p>', unsafe_allow_html=True)
@@ -98,7 +100,18 @@ if "results" in st.session_state:
                 c2.metric("Max Cutoff", f"{college['max_cutoff']:.2f}")
                 normalized = min(college["max_cutoff"] / 100.0, 1.0)
                 st.progress(normalized)
-                if st.button("View cutoff trend", key=college["branch_code"]):
+
+                trend_col, save_col = st.columns([3, 1])
+                with trend_col:
+                    trend_clicked = st.button("View cutoff trend", key=college["branch_code"])
+                with save_col:
+                    if is_logged_in():
+                        if st.button("💾 Save", key=f"save_{college['branch_code']}", use_container_width=True):
+                            save_college(college["branch_code"])
+                    else:
+                        st.caption("Log in to save")
+
+                if trend_clicked:
                     trend_response = requests.get(
                         API_URL_TRENDS,
                         params={"branch_code": college["branch_code"], "category": category},
