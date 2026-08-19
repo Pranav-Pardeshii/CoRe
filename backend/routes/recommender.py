@@ -2,7 +2,6 @@ from fastapi import APIRouter, Query, Depends, HTTPException
 from backend.database import get_db
 from pydantic import BaseModel, Field
 from typing import Annotated
-# from backend.auth import get_current_user
 
 router = APIRouter(prefix="/recommender", tags=["Recommender"])
 
@@ -18,7 +17,6 @@ class RecommenderSchema(BaseModel):
 
 @router.get("/")
 def recommender(params: Annotated[RecommenderSchema , Query()], db = Depends(get_db)):
-    # User login is not required for preview
 
     limit = params.page_size
     offset = (params.page-1)*limit
