@@ -9,7 +9,7 @@ Create Date: 2026-11-26
 from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
+from alembic import context, op
 
 # revision identifiers, used by Alembic.
 revision: str = "0004_production_hardening"
@@ -30,8 +30,13 @@ def upgrade() -> None:
     )
 
     # 2. Align users.username unique constraint name with ORM model (uq_users_username)
-    op.create_unique_constraint("uq_users_username", "users", ["username"])
-    op.drop_constraint("username", "users", type_="unique")
+    if not context.is_offline_mode():
+        inspector = sa.inspect(op.get_bind())
+        existing_uqs = {uc["name"] for uc in inspector.get_unique_constraints("users")}
+        if "uq_users_username" not in existing_uqs:
+            op.create_unique_constraint("uq_users_username", "users", ["username"])
+        if "username" in existing_uqs:
+            op.drop_constraint("username", "users", type_="unique")
 
     # 3. Add covering and lookup indexes
     op.create_index("ix_colleges_division", "colleges", ["division"])
@@ -117,9 +122,6 @@ def downgrade() -> None:
     )
     op.drop_index("ix_branches_branch_name_college_code", table_name="branches")
     op.drop_index("ix_colleges_division", table_name="colleges")
-
-    op.create_unique_constraint("username", "users", ["username"])
-    op.drop_constraint("uq_users_username", "users", type_="unique")
 
     op.alter_column(
         "admission_cutoffs",
