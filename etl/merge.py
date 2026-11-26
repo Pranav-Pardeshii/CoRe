@@ -2,7 +2,7 @@ import csv
 from pathlib import Path
 
 csvs_dir = Path(__file__).parent.parent / "csvs"
-output   = Path(__file__).parent.parent / "cutoffs_flat.csv"
+output = Path(__file__).parent.parent / "cutoffs_flat.csv"
 
 all_rows = []
 fieldnames = None

@@ -1,5 +1,6 @@
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 
 PREFIX_TO_DIVISION = {
     "01": "Amravati Division",
@@ -12,10 +13,22 @@ PREFIX_TO_DIVISION = {
     "16": "Pune Division",
 }
 
-df = pd.read_csv("cutoffs_flat.csv")
+FLAT_CSV_PATH = Path(__file__).resolve().parents[1] / "cutoffs_flat.csv"
 
-df["division"] = df["college_code"].astype(str).str.zfill(5).str[:2].map(PREFIX_TO_DIVISION).fillna("")
 
-df.to_csv("cutoffs_flat.csv", index=False)
+def add_division_column(csv_path: Path = FLAT_CSV_PATH) -> None:
+    """Populate the division column from the 2-digit college code prefix."""
+    cutoffs_df = pd.read_csv(csv_path)
+    cutoffs_df["division"] = (
+        cutoffs_df["college_code"]
+        .astype(str)
+        .str.zfill(5)
+        .str[:2]
+        .map(PREFIX_TO_DIVISION)
+        .fillna("")
+    )
+    cutoffs_df.to_csv(csv_path, index=False)
 
-print(df["division"].value_counts())
+
+if __name__ == "__main__":
+    add_division_column()
