@@ -22,12 +22,6 @@ etl = [
     "mysql-connector-python>=9.7.0",
     "python-dotenv>=1.2.2",
 ]
-frontend = [
-    "altair>=5.0.0",
-    "pandas>=3.0.3",
-    "requests>=2.34.2",
-    "streamlit>=1.59.1",
-]
 dev = [
     "httpx>=0.28.1",
     "pyright>=1.1.414",
@@ -38,7 +32,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["backend/tests", "etl/tests", "frontend/tests"]
+testpaths = ["backend/tests", "etl/tests"]
 pythonpath = ["."]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
@@ -49,7 +43,7 @@ markers = [
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-src = ["backend", "etl", "frontend"]
+src = ["backend", "etl"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
@@ -57,5 +51,5 @@ ignore = ["B008"]
 
 [tool.pyright]
 pythonVersion = "3.12"
-include = ["backend/app", "backend/tests", "etl", "frontend"]
+include = ["backend/app", "backend/tests", "etl"]
 typeCheckingMode = "standard"

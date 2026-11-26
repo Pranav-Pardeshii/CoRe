@@ -37,3 +37,13 @@ postman
 
 # test
 test.py
+
+# Frontend (Node/Vite)
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.vite/
+
+# Impeccable transient local artifacts (keep PRODUCT.md and DESIGN.md tracked)
+.impeccable/
