@@ -1,140 +1,84 @@
 # CoRe (College Recommendation & Analytics Platform)
 
-CoRe is a web application that helps engineering aspirants navigate Maharashtra's MHT-CET Centralized Admission Process (CAP). Instead of manually sifting through official cutoff PDFs, it provides instant, filterable college recommendations and historical cutoff trend analysis based on the last two years' actual CAP round data.
-
-**Live Application:** [core-ui-733w.onrender.com](https://core-ui-733w.onrender.com)
-
----
-
-## Table of Contents
-
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Data Pipeline & Architecture](#data-pipeline--architecture)
-  - [ETL Pipeline](#1-etl-pipeline-etl)
-  - [Database Schema](#2-database-schema)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-- [Roadmap](#roadmap)
-- [License](#license)
-
----
+CoRe is an MHT-CET engineering college recommendation and cutoff-analytics application built with FastAPI, MySQL, SQLAlchemy 2.x (async), Alembic, and Streamlit.
 
 ## Features
 
-- **Granular college search** — filter eligible institutions by percentile, category, branch, and division
-- **Historical trend analytics** — interactive cutoff-trend charts across years (2024–2025) and individual CAP rounds
-- **Public access** — browsing and searching requires no login
+- **College Recommendations (`GET /recommender/`)**: Filter eligible colleges and branches by percentile (`0–100`), category, branch, and division across 2024–2025 Stage I CAP cutoffs with `min_cutoff` / `max_cutoff` aggregation and pagination.
+- **Cutoff Trends (`GET /trends/`)**: View historical Stage I cutoff trends across years and CAP rounds (defaults `All` category to `GOPENS`).
+- **Authentication (`POST /auth/register`, `POST /auth/login`)**: Custom JWT (`HS256`, 15-minute access tokens) with `bcrypt` password hashing.
+- **Saved Lists (`GET/POST/PUT /saved-lists/`, `DELETE /saved-lists/{id}`)**: Authenticated per-user college shortlist with rank ordering and ownership enforcement.
 
 ## Tech Stack
 
-| Layer | Technology |
+| Component | Technology |
 |---|---|
-| Backend | FastAPI, Pydantic v2 (data validation) |
-| Auth | JWT (`python-jose`) — register/login endpoints exist; not currently required by any live feature |
-| Database | MySQL (hosted on Aiven) |
-| Frontend | Streamlit, Altair (data visualization) |
-| Environment & package management | uv |
+| Backend | FastAPI, Pydantic v2, `pydantic-settings` |
+| ORM & Driver | SQLAlchemy 2.x async ORM, `asyncmy` |
+| Migrations | Alembic |
+| Database | MySQL (Aiven in production) |
+| Frontend | Streamlit, Altair |
+| ETL | Python, `mysql-connector-python` (batch) |
+| Tooling | `uv`, `pytest`, `ruff`, `pyright` |
 
-## Data Pipeline & Architecture
-
-### 1. ETL Pipeline (`etl/`)
-
-A multi-stage Python pipeline that ingests and normalizes raw data from official CAP round PDFs:
-
-1. **Extraction** — pulls tabular data from multi-page PDFs into intermediate CSV structures
-2. **Regional mapping** — decodes college codes to programmatically assign each institution to one of Maharashtra's 7 educational divisions
-3. **Database ingestion** — normalizes and upserts the processed records into the relational schema below
-
-### 2. Database Schema
-
-Three tables, normalized around `branch_code`, with a composite unique constraint preventing duplicate cutoff rows:
-
-```
-colleges
-├── college_code   VARCHAR(10)   PRIMARY KEY
-├── college_name   VARCHAR(300)  NOT NULL
-├── status         VARCHAR(300)
-└── division       VARCHAR(100)
-
-branches
-├── branch_code    VARCHAR(15)   PRIMARY KEY
-├── branch_name    VARCHAR(300)  NOT NULL
-└── college_code   VARCHAR(10)   NOT NULL -> FK -> colleges.college_code
-
-cutoffs
-├── id             INT           PRIMARY KEY AUTO_INCREMENT
-├── branch_code    VARCHAR(15)   NOT NULL -> FK -> branches.branch_code
-├── year           SMALLINT      NOT NULL
-├── round          TINYINT       NOT NULL
-├── level          VARCHAR(10)   NOT NULL
-├── stage          VARCHAR(5)    NOT NULL
-├── category       VARCHAR(20)   NOT NULL
-├── rank           INT           NOT NULL
-└── percentile     FLOAT         NOT NULL
-
-UNIQUE CONSTRAINT (branch_code, year, round, level, stage, category)
-```
-
-One row in `cutoffs` = one category's cutoff, for one branch, in one specific CAP round/year.
-
-## Getting Started
+## Getting Started (Windows PowerShell)
 
 ### Prerequisites
 
-Python 3.10+ and [uv](https://docs.astral.sh/uv/getting-started/installation/) installed.
+- Python 3.12+
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)
 
-### Installation
+### 1. Install Dependencies
 
-**1. Clone the repository**
-
-```bash
-git clone https://github.com/Pranav-Pardeshii/CoRe.git
-cd CoRe
-```
-
-**2. Install dependencies**
-
-```bash
+```powershell
 uv sync
 ```
 
-**3. Environment configuration**
+### 2. Configure Environment
 
-Create a `.env` file inside `backend/` with your database credentials:
+Copy `backend\.env.example` to `backend\.env` and fill in your database credentials, SSL CA path (e.g. `./ca.pem`), and a strong `SECRET_KEY`:
 
-```env
-DB_HOST=your-db-host
-DB_USER=your-db-user
-DB_PORT=your-db-port
-DB_PASS=your-db-password
-DB_NAME=your-db-name
-DB_SSL_CA=./backend/ca.pem
+```powershell
+Copy-Item backend\.env.example backend\.env
 ```
 
-> If your database provider requires SSL, save the CA certificate at `backend/ca.pem`.
+### 3. Run the Backend
 
-**4. Run it**
-
-Start the FastAPI backend:
-
-```bash
+```powershell
 uv run uvicorn backend.main:app --reload
 ```
 
-In a separate terminal, start the Streamlit frontend:
+### 4. Run the Frontend (separate terminal)
 
-```bash
+```powershell
 uv run streamlit run frontend/ui.py
 ```
 
-## Roadmap
+### 5. Run Checks & Tests
 
-- [ ] **Saved shortlists** — wire the existing JWT auth into the frontend so logged-in users can save colleges to a personal list
-- [ ] **Finer category filters** — split categories by gender, home-university allocation, and caste as separate selectable fields instead of one combined code
-- [ ] **Pipeline automation** — a single-command CLI for ingesting future CAP round releases
-- [ ] **More historical years** — pending normalization of older data formats (2023 and earlier don't yet match the current schema)
+```powershell
+uv run ruff check backend
+uv run pyright
+uv run pytest -v
+```
+
+To run MySQL integration tests against an isolated test database:
+
+```powershell
+$env:CORE_TEST_DATABASE_URL = "mysql+asyncmy://user:password@localhost:3306/core_test"
+uv run pytest -v
+```
+
+## Documentation
+
+Engineering documentation lives in `docs/`:
+- [PRD](docs/PRD.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [API Contracts](docs/API.md)
+- [Database & Migrations](docs/DATABASE.md)
+- [Architecture Decisions](docs/DECISIONS.md)
+- [Testing Guide](docs/TESTING.md)
+- [Progress & Readiness](docs/PROGRESS.md)
 
 ## License
 
