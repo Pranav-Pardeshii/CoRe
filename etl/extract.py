@@ -12,8 +12,8 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-COLLEGE_RE = re.compile(r"^(\d{5})\s*-\s*(.+)$")
-BRANCH_RE = re.compile(r"^(\d{10}[A-Z0-9]*)\s*-\s*(.+)$")
+COLLEGE_RE = re.compile(r"^(\d{4,5})\s*-\s*(.+)$")
+BRANCH_RE = re.compile(r"^(\d{9,10}[A-Z0-9]*)\s*-\s*(.+)$")
 STATUS_RE = re.compile(r"^Status:\s*(.+)$")
 STAGE_RE = re.compile(r"^\s*(I{1,3}|IV)\s+\d")
 HEADER_RE = re.compile(r"^\s*Stage\s+[A-Z]")
@@ -259,13 +259,18 @@ def parse_pages(pages: list[list[str]], year: int, round_num: int) -> list[dict[
                     continue
 
             if college_match:
-                college_code = college_match.group(1)
+                college_code = college_match.group(1).zfill(5)
                 college_name = normalize_name(college_match.group(2))
                 state = "waiting_header"
                 continue
 
             if branch_match:
-                branch_code = branch_match.group(1)
+                raw_branch_code = branch_match.group(1)
+                parts = re.match(r"^(\d+)([A-Z0-9]*)$", raw_branch_code)
+                if parts:
+                    branch_code = parts.group(1).zfill(10) + parts.group(2)
+                else:
+                    branch_code = raw_branch_code
                 branch_name = branch_match.group(2).strip()
                 reading_branch_name = True
                 level = ""

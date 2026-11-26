@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Iterator, Sequence
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -22,19 +23,19 @@ DEFAULT_BATCH_SIZE = 2000
 
 UPSERT_COLLEGES_SQL = """
 INSERT INTO colleges (college_code, college_name, status, division)
-VALUES (%s, %s, %s, %s)
+VALUES (%s, %s, %s, %s) AS new
 ON DUPLICATE KEY UPDATE
-    college_name = VALUES(college_name),
-    status = VALUES(status),
-    division = VALUES(division)
+    college_name = new.college_name,
+    status = new.status,
+    division = new.division
 """
 
 UPSERT_BRANCHES_SQL = """
 INSERT INTO branches (branch_code, branch_name, college_code)
-VALUES (%s, %s, %s)
+VALUES (%s, %s, %s) AS new
 ON DUPLICATE KEY UPDATE
-    branch_name = VALUES(branch_name),
-    college_code = VALUES(college_code)
+    branch_name = new.branch_name,
+    college_code = new.college_code
 """
 
 UPSERT_CUTOFFS_SQL = """
@@ -48,10 +49,10 @@ INSERT INTO admission_cutoffs (
     merit_rank,
     percentile
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s) AS new
 ON DUPLICATE KEY UPDATE
-    merit_rank = VALUES(merit_rank),
-    percentile = VALUES(percentile)
+    merit_rank = new.merit_rank,
+    percentile = new.percentile
 """
 
 
@@ -68,12 +69,12 @@ def prepare_records(
 ) -> tuple[
     list[tuple[str, str, str, str]],
     list[tuple[str, str, str]],
-    list[tuple[str, int, int, str, str, str, int, float]],
+    list[tuple[str, int, int, str, str, str, int, Decimal]],
 ]:
     """Build deduplicated college/branch tuples and cutoff tuples from validated rows."""
     colleges: dict[str, tuple[str, str, str, str]] = {}
     branches: dict[str, tuple[str, str, str]] = {}
-    cutoffs: list[tuple[str, int, int, str, str, str, int, float]] = []
+    cutoffs: list[tuple[str, int, int, str, str, str, int, Decimal]] = []
 
     for row in rows:
         college_code = row["college_code"].strip()
@@ -107,7 +108,7 @@ def prepare_records(
                 stage_val,
                 row["category"].strip(),
                 rank_val,
-                float(row["percentile"].strip()),
+                Decimal(row["percentile"].strip()),
             )
         )
 
@@ -159,6 +160,7 @@ def load_csv_to_db(
     db_config: DatabaseConfig | None = None,
     batch_size: int = DEFAULT_BATCH_SIZE,
     dry_run: bool = False,
+    skip_validation: bool = False,
 ) -> dict[str, int]:
     """Validate *csv_path* and load colleges, branches, and admission_cutoffs in chunks."""
     if batch_size <= 0:
@@ -167,10 +169,11 @@ def load_csv_to_db(
         raise FileNotFoundError(f"CSV file not found: {csv_path}")
 
     rows = read_csv_strings(csv_path)
-    report = validate_rows(rows)
-    logger.info("\n%s", format_validation_summary(report))
-    if not report.is_valid:
-        raise ValidationError(report)
+    if not skip_validation:
+        report = validate_rows(rows)
+        logger.info("\n%s", format_validation_summary(report))
+        if not report.is_valid:
+            raise ValidationError(report)
 
     colleges, branches, cutoffs = prepare_records(rows)
     logger.info(

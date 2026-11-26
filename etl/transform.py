@@ -17,7 +17,11 @@ PREFIX_TO_DIVISION: dict[str, str] = {
     "04": "Nagpur Division",
     "05": "Nashik Division",
     "06": "Pune Division",
+    "11": "Amravati Division",
+    "12": "Aurangabad Division",
+    "13": "Mumbai Division",
     "14": "Nagpur Division",
+    "15": "Nashik Division",
     "16": "Pune Division",
 }
 

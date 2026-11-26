@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 from etl.cli import main as cli_main
 from etl.config import DatabaseConfig, load_db_config
-from etl.load import UPSERT_CUTOFFS_SQL, load_csv_to_db
+from etl.load import UPSERT_CUTOFFS_SQL, load_csv_to_db, prepare_records
 from etl.transform import write_flat_csv
 
 
@@ -114,6 +115,16 @@ def test_load_chunks_executemany_and_logs_counts(
     ]
     assert [len(call.args[1]) for call in cutoff_calls] == [2, 2, 1]
     assert mock_conn.commit.call_count == 5  # 1 colleges + 1 branches + 3 cutoffs
+    assert "AS new" in UPSERT_CUTOFFS_SQL
+
+
+def test_prepare_records_preserves_decimal_precision() -> None:
+    """prepare_records keeps 7-decimal percentiles as Decimal without float drift."""
+    rows = _make_rows(1)
+    rows[0]["percentile"] = "99.1234567"
+    _colleges, _branches, cutoffs = prepare_records(rows)
+    assert isinstance(cutoffs[0][7], Decimal)
+    assert cutoffs[0][7] == Decimal("99.1234567")
 
 
 def test_load_fails_on_missing_alembic_tables(

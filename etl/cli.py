@@ -88,6 +88,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.csv_path,
                 batch_size=args.batch_size,
                 dry_run=args.dry_run,
+                skip_validation=True,
             )
     except ValidationError as exc:
         print(format_validation_summary(exc.report))

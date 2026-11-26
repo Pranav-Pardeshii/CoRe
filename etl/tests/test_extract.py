@@ -158,3 +158,21 @@ def test_extract_pdf_to_csv_creates_output_dir_and_csv_extension(
     assert out_dir.exists()
     assert out_csv.suffix == ".csv"
     assert out_csv.name == "cutoff_2026_r1.csv"
+
+
+def test_parse_pages_pads_4_digit_college_and_9_digit_branch_codes() -> None:
+    """2022/2023 PDFs with stripped leading zeros (1002 / 100219110) are zero-padded."""
+    page_lines = [
+        "1002 - Government College of Engineering, Amravati",
+        "100219110 - Civil Engineering",
+        "Status: Government Autonomous",
+        "State Level",
+        "Stage    GOPENS",
+        "I        40678",
+        "         (77.8495773)",
+    ]
+
+    rows = parse_pages([page_lines], year=2022, round_num=1)
+    assert len(rows) == 1
+    assert rows[0]["college_code"] == "01002"
+    assert rows[0]["branch_code"] == "0100219110"
