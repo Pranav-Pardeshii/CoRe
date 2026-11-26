@@ -9,7 +9,8 @@ from backend.app.core.exceptions import UnauthorizedError
 from backend.app.core.rate_limit import (
     InMemoryRateLimiter,
     extract_client_ip,
-    get_auth_rate_limiter,
+    get_auth_ip_rate_limiter,
+    get_auth_username_rate_limiter,
 )
 from backend.app.core.security import (
     JWT_AUDIENCE,
@@ -128,7 +129,7 @@ def test_register_and_login_prevent_username_enumeration(test_settings: Settings
         yield mock_session
 
     app.dependency_overrides[get_db_session] = override_db
-    app.dependency_overrides[get_auth_rate_limiter] = lambda: InMemoryRateLimiter()
+    app.dependency_overrides[get_auth_ip_rate_limiter] = lambda: InMemoryRateLimiter()
 
     with TestClient(app) as client:
         # Unknown user -> 401 generic error + no-store cache header
@@ -182,11 +183,19 @@ def test_register_and_login_prevent_username_enumeration(test_settings: Settings
 
 
 def test_auth_rate_limiter_enforces_ip_and_username_limits(test_settings: Settings) -> None:
+    proxy_settings = test_settings.model_copy(
+        update={
+            "TRUSTED_PROXY_HOPS": 1,
+            "AUTH_RATE_LIMIT_MAX_REQUESTS": 4,
+            "AUTH_LOGIN_USERNAME_MAX_ATTEMPTS": 3,
+        }
+    )
     app = create_app(
-        settings=test_settings,
+        settings=proxy_settings,
         database_url_override="mysql+asyncmy://u:p@localhost:3306/core_test",
     )
-    limiter = InMemoryRateLimiter()
+    ip_limiter = InMemoryRateLimiter()
+    username_limiter = InMemoryRateLimiter()
     mock_session = AsyncMock()
     no_user_result = MagicMock()
     no_user_result.scalar_one_or_none.return_value = None
@@ -196,17 +205,39 @@ def test_auth_rate_limiter_enforces_ip_and_username_limits(test_settings: Settin
         yield mock_session
 
     app.dependency_overrides[get_db_session] = override_db
-    app.dependency_overrides[get_auth_rate_limiter] = lambda: limiter
+    app.dependency_overrides[get_auth_ip_rate_limiter] = lambda: ip_limiter
+    app.dependency_overrides[get_auth_username_rate_limiter] = lambda: username_limiter
 
     with TestClient(app) as client:
-        for idx in range(test_settings.AUTH_RATE_LIMIT_MAX_REQUESTS):
+        # (a) Per-IP limit across varying usernames
+        for idx in range(proxy_settings.AUTH_RATE_LIMIT_MAX_REQUESTS):
             resp = client.post(
                 "/auth/login",
                 data={"username": f"nobody_{idx}", "password": "pw"},
+                headers={"X-Forwarded-For": "198.51.100.10"},
             )
             assert resp.status_code == 401
-        blocked = client.post("/auth/login", data={"username": "nobody_final", "password": "pw"})
-        assert blocked.status_code == 429
+        ip_blocked = client.post(
+            "/auth/login",
+            data={"username": "nobody_final", "password": "pw"},
+            headers={"X-Forwarded-For": "198.51.100.10"},
+        )
+        assert ip_blocked.status_code == 429
+
+        # (b) Per-username lockout across rotating client IPs
+        for idx in range(proxy_settings.AUTH_LOGIN_USERNAME_MAX_ATTEMPTS):
+            resp = client.post(
+                "/auth/login",
+                data={"username": "victim_user", "password": "wrong"},
+                headers={"X-Forwarded-For": f"203.0.113.{idx + 1}"},
+            )
+            assert resp.status_code == 401
+        username_blocked = client.post(
+            "/auth/login",
+            data={"username": "victim_user", "password": "wrong"},
+            headers={"X-Forwarded-For": "203.0.113.200"},
+        )
+        assert username_blocked.status_code == 429
 
 
 def test_rate_limiter_lru_eviction_and_proxy_extraction() -> None:

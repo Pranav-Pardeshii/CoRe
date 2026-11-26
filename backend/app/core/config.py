@@ -30,6 +30,10 @@ class Settings(BaseSettings):
         default="INFO",
         validation_alias=AliasChoices("CORE_LOG_LEVEL", "LOG_LEVEL"),
     )
+    GCP_PROJECT_ID: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("CORE_GCP_PROJECT_ID", "GOOGLE_CLOUD_PROJECT"),
+    )
     CORS_ORIGINS: list[str] = Field(
         default_factory=lambda: ["http://localhost:8501", "http://127.0.0.1:8501"],
         validation_alias=AliasChoices("CORE_CORS_ORIGINS", "CORS_ORIGINS"),

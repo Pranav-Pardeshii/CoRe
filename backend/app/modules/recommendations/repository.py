@@ -1,3 +1,4 @@
+import time
 from decimal import Decimal
 
 from sqlalchemy import func, select
@@ -7,12 +8,25 @@ from sqlalchemy.sql import Select
 from backend.app.modules.catalog.models import AdmissionCutoff, Branch, College
 from backend.app.modules.recommendations.schemas import EligibleCollegeOut
 
+_YEARS_CACHE_TTL_SECONDS = 600.0
+_years_cache: dict[int, tuple[float, list[int]]] = {}
+
+
+def clear_recommendations_cache() -> None:
+    """Clear the cached latest admission years (primarily for test isolation)."""
+    _years_cache.clear()
+
 
 class RecommendationsRepository:
     """SQLAlchemy queries for MHT-CET college eligibility recommendations."""
 
     async def get_latest_years(self, session: AsyncSession, limit: int = 2) -> list[int]:
-        """Return the latest distinct admission years present in admission_cutoffs."""
+        """Return the latest distinct admission years with an in-process 600s TTL cache."""
+        now = time.monotonic()
+        cached = _years_cache.get(limit)
+        if cached is not None and (now - cached[0]) < _YEARS_CACHE_TTL_SECONDS:
+            return list(cached[1])
+
         stmt = (
             select(AdmissionCutoff.admission_year)
             .distinct()
@@ -20,7 +34,10 @@ class RecommendationsRepository:
             .limit(limit)
         )
         result = await session.execute(stmt)
-        return [int(row[0]) for row in result.all()]
+        years = [int(row[0]) for row in result.all()]
+        if years:
+            _years_cache[limit] = (now, years)
+        return years
 
     @staticmethod
     def _build_filtered_grouped_query(
@@ -84,7 +101,10 @@ class RecommendationsRepository:
         )
         windowed_stmt = (
             base_stmt.add_columns(func.count().over().label("total_count"))
-            .order_by(func.max(AdmissionCutoff.percentile).desc())
+            .order_by(
+                func.max(AdmissionCutoff.percentile).desc(),
+                AdmissionCutoff.branch_code.asc(),
+            )
             .limit(limit)
             .offset(offset)
         )

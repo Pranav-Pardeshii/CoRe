@@ -49,6 +49,12 @@ class RequestIdFilter(logging.Filter):
 class JsonLogFormatter(logging.Formatter):
     """Format log records as JSON compatible with Google Cloud Logging."""
 
+    def __init__(self, gcp_project_id: str | None = None) -> None:
+        super().__init__()
+        self._gcp_project_id = (
+            gcp_project_id.strip() if gcp_project_id and gcp_project_id.strip() else None
+        )
+
     def format(self, record: logging.LogRecord) -> str:
         payload: dict[str, object] = {
             "severity": record.levelname,
@@ -58,18 +64,23 @@ class JsonLogFormatter(logging.Formatter):
         }
         trace_id = getattr(record, "trace_id", "")
         if trace_id:
-            payload["logging.googleapis.com/trace"] = trace_id
+            if self._gcp_project_id:
+                payload["logging.googleapis.com/trace"] = (
+                    f"projects/{self._gcp_project_id}/traces/{trace_id}"
+                )
+            else:
+                payload["trace_id"] = trace_id
         if record.exc_info:
             payload["exception"] = self.formatException(record.exc_info)
         return json.dumps(payload, ensure_ascii=False)
 
 
-def configure_logging(level: str = "INFO") -> None:
+def configure_logging(level: str = "INFO", gcp_project_id: str | None = None) -> None:
     """Configure structured JSON application logging without exposing secrets."""
     resolved_level = getattr(logging, level.upper(), logging.INFO)
     handler = logging.StreamHandler(sys.stdout)
     handler.addFilter(RequestIdFilter())
-    handler.setFormatter(JsonLogFormatter())
+    handler.setFormatter(JsonLogFormatter(gcp_project_id=gcp_project_id))
 
     root_logger = logging.getLogger()
     root_logger.handlers.clear()

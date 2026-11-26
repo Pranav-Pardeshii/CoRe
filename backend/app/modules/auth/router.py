@@ -6,7 +6,7 @@ from backend.app.core.config import Settings, get_app_settings
 from backend.app.core.rate_limit import (
     InMemoryRateLimiter,
     enforce_auth_rate_limit,
-    get_auth_rate_limiter,
+    get_auth_username_rate_limiter,
 )
 from backend.app.infrastructure.database.session import get_db_session
 from backend.app.modules.auth.schemas import (
@@ -45,7 +45,7 @@ async def login(
     credentials: OAuth2PasswordRequestForm = Depends(),
     session: AsyncSession = Depends(get_db_session),
     settings: Settings = Depends(get_app_settings),
-    limiter: InMemoryRateLimiter = Depends(get_auth_rate_limiter),
+    limiter: InMemoryRateLimiter = Depends(get_auth_username_rate_limiter),
 ) -> TokenResponse:
     return await _auth_service.login(
         session,

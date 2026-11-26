@@ -77,11 +77,33 @@ class InMemoryRateLimiter:
         self._buckets.clear()
 
 
-_auth_rate_limiter = InMemoryRateLimiter()
+_auth_ip_rate_limiter = InMemoryRateLimiter()
+_auth_username_rate_limiter = InMemoryRateLimiter()
+_public_rate_limiter = InMemoryRateLimiter()
+
+
+def get_auth_ip_rate_limiter() -> InMemoryRateLimiter:
+    return _auth_ip_rate_limiter
+
+
+def get_auth_username_rate_limiter() -> InMemoryRateLimiter:
+    return _auth_username_rate_limiter
+
+
+def get_public_rate_limiter() -> InMemoryRateLimiter:
+    return _public_rate_limiter
 
 
 def get_auth_rate_limiter() -> InMemoryRateLimiter:
-    return _auth_rate_limiter
+    """Alias for auth IP rate limiter."""
+    return _auth_ip_rate_limiter
+
+
+def reset_all_rate_limiters() -> None:
+    """Reset all process-local rate limiters (primarily for test isolation)."""
+    _auth_ip_rate_limiter.reset()
+    _auth_username_rate_limiter.reset()
+    _public_rate_limiter.reset()
 
 
 def _is_ip_trusted(ip_str: str, trusted_entries: list[str]) -> bool:
@@ -130,7 +152,7 @@ def extract_client_ip(
 def enforce_auth_rate_limit(
     request: Request,
     settings: Settings = Depends(get_app_settings),
-    limiter: InMemoryRateLimiter = Depends(get_auth_rate_limiter),
+    limiter: InMemoryRateLimiter = Depends(get_auth_ip_rate_limiter),
 ) -> None:
     """Reject excessive authentication attempts from a single client IP."""
     client_ip = extract_client_ip(
@@ -153,7 +175,7 @@ def enforce_auth_rate_limit(
 def enforce_public_rate_limit(
     request: Request,
     settings: Settings = Depends(get_app_settings),
-    limiter: InMemoryRateLimiter = Depends(get_auth_rate_limiter),
+    limiter: InMemoryRateLimiter = Depends(get_public_rate_limiter),
 ) -> None:
     """Reject excessive requests to public catalog/recommender/trends endpoints."""
     client_ip = extract_client_ip(

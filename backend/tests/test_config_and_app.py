@@ -1,9 +1,12 @@
+import json
+import logging
 import ssl
 from pathlib import Path
 from unittest.mock import AsyncMock
 
 import pytest
 from backend.app.core.config import Settings
+from backend.app.core.logging import JsonLogFormatter
 from backend.app.infrastructure.database.session import get_db_session
 from backend.app.main import create_app
 from backend.tests.conftest import (
@@ -155,7 +158,74 @@ def test_app_root_ping_and_security_headers(test_settings: Settings) -> None:
         ready_resp = client.get("/health/ready")
         assert ready_resp.status_code == 200
         assert ready_resp.json() == {"status": "ready"}
+        # Second immediate /health/ready hits 2s TTL cache instead of DB
+        ready_cached = client.get("/health/ready")
+        assert ready_cached.status_code == 200
         assert mock_session.execute.await_count == 2
+
+
+def test_logging_includes_request_id_and_headers_on_200_and_500(
+    test_settings: Settings,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    app = create_app(
+        settings=test_settings,
+        database_url_override="mysql+asyncmy://u:p@localhost:3306/core_test",
+    )
+
+    @app.get("/_boom_headers")
+    async def boom_headers() -> None:
+        raise RuntimeError("unhandled boom")
+
+    with TestClient(app, raise_server_exceptions=False) as client:
+        ok_resp = client.get(
+            "/health/live",
+            headers={"X-Request-ID": "req-ok-123", "X-Cloud-Trace-Context": "trace-abc/1;o=1"},
+        )
+        assert ok_resp.status_code == 200
+        assert ok_resp.headers["X-Request-ID"] == "req-ok-123"
+
+        err_resp = client.get(
+            "/_boom_headers",
+            headers={"X-Request-ID": "req-err-456"},
+        )
+        assert err_resp.status_code == 500
+        assert err_resp.json() == {"detail": "Internal server error."}
+        assert err_resp.headers["X-Request-ID"] == "req-err-456"
+        assert err_resp.headers["X-Content-Type-Options"] == "nosniff"
+        assert err_resp.headers["X-Frame-Options"] == "DENY"
+        assert err_resp.headers["Referrer-Policy"] == "no-referrer"
+
+    captured_lines = [
+        json.loads(line)
+        for line in capsys.readouterr().out.splitlines()
+        if line.strip().startswith("{")
+    ]
+    access_records = [
+        rec
+        for rec in captured_lines
+        if rec.get("logger") == "backend.app.main" and "status=" in str(rec.get("message", ""))
+    ]
+    assert any(
+        rec.get("request_id") == "req-ok-123" and "status=200" in str(rec.get("message"))
+        for rec in access_records
+    )
+    assert any(
+        rec.get("request_id") == "req-err-456" and "status=500" in str(rec.get("message"))
+        for rec in access_records
+    )
+    assert all(rec.get("request_id") != "-" for rec in access_records)
+
+    # Verify JsonLogFormatter formats GCP trace with and without GCP_PROJECT_ID
+    record = logging.LogRecord("test", logging.INFO, "", 0, "hello", (), None)
+    record.request_id = "req-1"
+    record.trace_id = "abc123"
+    plain_payload = json.loads(JsonLogFormatter().format(record))
+    assert plain_payload["trace_id"] == "abc123"
+    assert "logging.googleapis.com/trace" not in plain_payload
+
+    gcp_payload = json.loads(JsonLogFormatter(gcp_project_id="my-proj").format(record))
+    assert gcp_payload["logging.googleapis.com/trace"] == "projects/my-proj/traces/abc123"
 
 
 def test_readiness_returns_503_without_leaking_db_details(test_settings: Settings) -> None:

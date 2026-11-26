@@ -54,6 +54,17 @@ async def test_saved_list_create_allocates_rank_and_handles_duplicates() -> None
     assert exc_info.value.status_code == 409
     session.rollback.assert_awaited_once()
 
+    # Non-duplicate IntegrityError (e.g. FK failure) -> AppError (400), NOT 409
+    session.reset_mock()
+    repo.create_item.side_effect = IntegrityError(
+        "INSERT", {}, Exception("Cannot add or update a child row")
+    )
+    with pytest.raises(AppError) as fk_exc:
+        await service.create_item(session, user_id=5, branch_code="0627124510")
+    assert fk_exc.value.status_code == 400
+    assert not isinstance(fk_exc.value, ConflictError)
+    session.rollback.assert_awaited_once()
+
 
 async def test_saved_list_enforces_max_items_and_user_existence() -> None:
     repo = AsyncMock()

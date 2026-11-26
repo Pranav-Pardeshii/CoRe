@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass
 
 from sqlalchemy import select
@@ -5,6 +6,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.modules.catalog.models import AdmissionCutoff, Branch, College
 from backend.app.modules.catalog.schemas import CatalogFiltersResponse
+
+_FILTERS_CACHE_TTL_SECONDS = 600.0
+_filters_cache: tuple[float, CatalogFiltersResponse] | None = None
+
+
+def clear_catalog_cache() -> None:
+    """Clear the cached catalog filter options (primarily for test isolation)."""
+    global _filters_cache
+    _filters_cache = None
 
 
 @dataclass(frozen=True)
@@ -40,7 +50,12 @@ class CatalogRepository:
         )
 
     async def get_filter_options(self, session: AsyncSession) -> CatalogFiltersResponse:
-        """Fetch sorted distinct filter options from MySQL."""
+        """Fetch sorted distinct filter options from MySQL with an in-process 600s TTL cache."""
+        global _filters_cache
+        now = time.monotonic()
+        if _filters_cache is not None and (now - _filters_cache[0]) < _FILTERS_CACHE_TTL_SECONDS:
+            return _filters_cache[1]
+
         categories_res = await session.execute(
             select(AdmissionCutoff.category).distinct().order_by(AdmissionCutoff.category.asc())
         )
@@ -62,10 +77,12 @@ class CatalogRepository:
             select(AdmissionCutoff.level).distinct().order_by(AdmissionCutoff.level.asc())
         )
 
-        return CatalogFiltersResponse(
+        response = CatalogFiltersResponse(
             categories=[str(row[0]) for row in categories_res.all()],
             branches=[str(row[0]) for row in branches_res.all()],
             divisions=[str(row[0]) for row in divisions_res.all() if row[0] is not None],
             years=[int(row[0]) for row in years_res.all()],
             levels=[str(row[0]) for row in levels_res.all()],
         )
+        _filters_cache = (now, response)
+        return response

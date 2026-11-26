@@ -3,6 +3,9 @@ from urllib.parse import urlparse
 
 import pytest
 from backend.app.core.config import Settings
+from backend.app.core.rate_limit import reset_all_rate_limiters
+from backend.app.modules.catalog.repository import clear_catalog_cache
+from backend.app.modules.recommendations.repository import clear_recommendations_cache
 
 _LOOPBACK_HOSTS = frozenset({"localhost", "127.0.0.1", "::1"})
 _FORBIDDEN_HOST_MARKERS = ("aivencloud.com", "prod", "production")
@@ -53,6 +56,14 @@ def require_destructive_test_opt_in() -> None:
     opt_in = os.getenv("CORE_TEST_ALLOW_DESTRUCTIVE", "").strip().lower()
     if opt_in not in {"1", "true", "yes"}:
         pytest.fail("Destructive MySQL integration tests require CORE_TEST_ALLOW_DESTRUCTIVE=1.")
+
+
+@pytest.fixture(autouse=True)
+def reset_process_caches() -> None:
+    """Reset all process-local rate limiters and lookup caches before each test."""
+    reset_all_rate_limiters()
+    clear_recommendations_cache()
+    clear_catalog_cache()
 
 
 @pytest.fixture

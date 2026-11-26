@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 import time
@@ -29,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 _REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
 _NO_STORE_PREFIXES = ("/auth", "/saved-lists")
+_READINESS_CACHE_TTL_SECONDS = 2.0
 
 
 def _sanitize_request_id(raw_value: str | None) -> str:
@@ -53,7 +55,10 @@ def create_app(
 ) -> FastAPI:
     """Create and configure the FastAPI application with lifespan-managed async DB."""
     resolved_settings = settings or get_settings()
-    configure_logging(resolved_settings.LOG_LEVEL)
+    configure_logging(
+        resolved_settings.LOG_LEVEL,
+        gcp_project_id=resolved_settings.GCP_PROJECT_ID,
+    )
 
     @asynccontextmanager
     async def lifespan(application: FastAPI) -> AsyncIterator[None]:
@@ -95,27 +100,38 @@ def create_app(
         trace_token = set_trace_id(trace_id)
         started_at = time.monotonic()
         try:
-            response = await call_next(request)
+            try:
+                response = await call_next(request)
+            except Exception as exc:
+                logger.exception(
+                    "Unhandled error type=%s request_id=%s",
+                    exc.__class__.__name__,
+                    request_id,
+                )
+                response = JSONResponse(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    content={"detail": "Internal server error."},
+                )
+
+            response.headers["X-Request-ID"] = request_id
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["X-Frame-Options"] = "DENY"
+            response.headers["Referrer-Policy"] = "no-referrer"
+            if request.url.path.startswith(_NO_STORE_PREFIXES):
+                response.headers["Cache-Control"] = "no-store"
+
+            duration_ms = round((time.monotonic() - started_at) * 1000, 2)
+            logger.info(
+                "method=%s path=%s status=%s duration_ms=%s",
+                request.method,
+                request.url.path,
+                response.status_code,
+                duration_ms,
+            )
+            return response
         finally:
             reset_trace_id(trace_token)
             reset_request_id(req_token)
-
-        duration_ms = round((time.monotonic() - started_at) * 1000, 2)
-        response.headers["X-Request-ID"] = request_id
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["Referrer-Policy"] = "no-referrer"
-        if request.url.path.startswith(_NO_STORE_PREFIXES):
-            response.headers["Cache-Control"] = "no-store"
-
-        logger.info(
-            "method=%s path=%s status=%s duration_ms=%s",
-            request.method,
-            request.url.path,
-            response.status_code,
-            duration_ms,
-        )
-        return response
 
     register_exception_handlers(application)
     application.include_router(api_router)
@@ -137,11 +153,31 @@ def create_app(
     async def liveness() -> dict[str, str]:
         return {"status": "alive"}
 
+    readiness_lock = asyncio.Lock()
+    readiness_cache: dict[str, float | bool] = {"checked_at": 0.0, "is_ready": False}
+
     @application.get("/health/ready")
     async def readiness(session: AsyncSession = Depends(get_db_session)) -> Response:
-        try:
-            await session.execute(text("SELECT 1"))
-        except SQLAlchemyError:
+        now = time.monotonic()
+        checked_at = float(readiness_cache["checked_at"])
+        if checked_at > 0.0 and (now - checked_at) < _READINESS_CACHE_TTL_SECONDS:
+            is_ready = bool(readiness_cache["is_ready"])
+        else:
+            async with readiness_lock:
+                now = time.monotonic()
+                checked_at = float(readiness_cache["checked_at"])
+                if checked_at > 0.0 and (now - checked_at) < _READINESS_CACHE_TTL_SECONDS:
+                    is_ready = bool(readiness_cache["is_ready"])
+                else:
+                    try:
+                        await session.execute(text("SELECT 1"))
+                        is_ready = True
+                    except SQLAlchemyError:
+                        is_ready = False
+                    readiness_cache["checked_at"] = time.monotonic()
+                    readiness_cache["is_ready"] = is_ready
+
+        if not is_ready:
             return JSONResponse(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 content={"status": "unavailable"},
