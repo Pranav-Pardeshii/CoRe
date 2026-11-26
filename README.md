@@ -1,14 +1,14 @@
 # CoRe (College Recommendation & Analytics Platform)
 
-CoRe is an MHT-CET engineering college recommendation and cutoff-analytics application built with FastAPI, MySQL, SQLAlchemy 2.x (async), Alembic, and Streamlit.
+CoRe is an MHT-CET engineering college recommendation and cutoff-analytics application built with FastAPI, MySQL, SQLAlchemy 2.x (async), Alembic, and a React 19 + TypeScript + Vite + Tailwind CSS v4 frontend.
 
 ## Features
 
-- **College Recommendations (`GET /recommender/`)**: Filter eligible colleges and branches by percentile (`0–100`), category, branch, and division across the latest 2 distinct admission years in MySQL (or `CORE_RECOMMENDER_YEARS`) with `min_cutoff` / `max_cutoff` aggregation and single-query pagination.
+- **College Recommendations (`GET /recommender/`)**: Filter eligible colleges and branches by percentile (`0–100`, up to 7 decimal places), category, branch, and division across the latest 2 distinct admission years in MySQL (or `CORE_RECOMMENDER_YEARS`) with `min_cutoff` / `max_cutoff` aggregation and single-query pagination.
 - **Catalog Filters (`GET /catalog/filters`)**: Dynamic categories, branches, divisions, years, and levels queried directly from MySQL.
 - **Cutoff Trends (`GET /trends/`)**: View historical Stage I cutoff trends across years, CAP rounds, and seat `level`s (defaults `All` category to `GOPENS`).
 - **Authentication (`POST /auth/register`, `POST /auth/login`)**: Custom JWT (`HS256`, configurable `CORE_ACCESS_TOKEN_EXPIRE_MINUTES`, default 60 minutes) with `Argon2id` password hashing via `pwdlib`.
-- **Saved Lists (`GET/POST/PUT /saved-lists/`, `DELETE /saved-lists/{id}`)**: Authenticated per-user college shortlist (up to 100 items) with bulk reorder and ownership enforcement.
+- **Saved Lists (`GET/POST/PUT /saved-lists/`, `DELETE /saved-lists/{id}`)**: Authenticated per-user CAP Option Form shortlist (up to 100 items) with drag-and-drop / step reordering, CSV export, and print support.
 
 ## Tech Stack
 
@@ -20,9 +20,9 @@ CoRe is an MHT-CET engineering college recommendation and cutoff-analytics appli
 | Migrations | Alembic |
 | Database | MySQL 8.0 (Google Cloud SQL for production) |
 | Hosting & Secrets | Google Cloud Run, Artifact Registry, Secret Manager |
-| Frontend | Streamlit, Altair (`frontend` dependency group) |
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS v4, TanStack Query, Recharts, dnd-kit (`frontend/`) |
 | ETL | Python CLI (`python -m etl`), `mysql-connector-python` (`etl` dependency group) |
-| Tooling | `uv`, `pytest`, `ruff`, `pyright` |
+| Tooling | `uv`, `pytest`, `ruff`, `pyright`, `vitest`, `eslint` |
 
 ## Getting Started (Windows PowerShell)
 
@@ -63,18 +63,29 @@ uv run uvicorn backend.main:create_app --factory --reload
 
 ### 5. Run the Frontend (separate terminal)
 
+Copy `frontend\.env.example` to `frontend\.env` if targeting a non-default backend URL (defaults to `http://127.0.0.1:8000`), and ensure `CORE_CORS_ORIGINS` in `backend\.env` includes `http://localhost:5173` and `http://127.0.0.1:5173`:
+
 ```powershell
-$env:CORE_API_BASE_URL = "http://127.0.0.1:8000"
-uv run streamlit run frontend/ui.py
+cd frontend
+npm ci
+npm run dev
 ```
 
 ### 6. Run Checks & Tests
 
 ```powershell
+# Backend & ETL (repo root)
 uv run ruff check .
 uv run ruff format --check .
 uv run pyright
-uv run pytest -v
+uv run pytest -v -m "not integration"
+
+# Frontend (frontend/)
+cd frontend
+npm run typecheck
+npm run lint
+npm run test
+npm run build
 ```
 
 To run MySQL integration tests against an isolated test database:
