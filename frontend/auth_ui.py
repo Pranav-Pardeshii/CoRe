@@ -1,5 +1,5 @@
-import streamlit as st
 import requests
+import streamlit as st
 
 API_URL_AUTH = "https://core-5y5r.onrender.com/auth"
 
@@ -73,12 +73,18 @@ def render_auth_sidebar():
 
             mode_col1, mode_col2 = st.columns(2)
             with mode_col1:
-                if st.button("Login", use_container_width=True,
-                              type="primary" if st.session_state["auth_mode"] == "login" else "secondary"):
+                if st.button(
+                    "Login",
+                    use_container_width=True,
+                    type="primary" if st.session_state["auth_mode"] == "login" else "secondary",
+                ):
                     st.session_state["auth_mode"] = "login"
             with mode_col2:
-                if st.button("Register", use_container_width=True,
-                              type="primary" if st.session_state["auth_mode"] == "register" else "secondary"):
+                if st.button(
+                    "Register",
+                    use_container_width=True,
+                    type="primary" if st.session_state["auth_mode"] == "register" else "secondary",
+                ):
                     st.session_state["auth_mode"] = "register"
 
             username = st.text_input("Username", key="auth_username")

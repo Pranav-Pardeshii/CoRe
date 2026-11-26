@@ -1,5 +1,5 @@
-import streamlit as st
 import requests
+import streamlit as st
 from auth_ui import get_token, is_logged_in
 
 API_URL_SAVED_LIST = "https://core-5y5r.onrender.com/saved-lists/"
@@ -37,7 +37,9 @@ def _fetch_saved_list():
 
 
 def _delete_item(item_id: int):
-    response = requests.delete(f"{API_URL_SAVED_LIST}{item_id}", headers=_auth_headers(), timeout=15)
+    response = requests.delete(
+        f"{API_URL_SAVED_LIST}{item_id}", headers=_auth_headers(), timeout=15
+    )
     data = response.json()
     if response.status_code != 200:
         st.error(data.get("detail", "Couldn't delete item."))

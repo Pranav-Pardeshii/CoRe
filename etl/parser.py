@@ -1,8 +1,7 @@
-import re
 import csv
+import re
 import subprocess
 from pathlib import Path
-
 
 ROUND_RE = re.compile(r"^Round\s*(.+)$")
 COLLEGE_RE = re.compile(r"^(\d{5})\s*-\s*(.+)$")
@@ -150,22 +149,27 @@ def parse_pages(pages, YEAR, ROUND):
             # Wrapped header suffix line (e.g. "                    S               S")
             # These are suffix fragments for category names that wrapped to next line.
             # Merge each fragment into the nearest preceding category name.
-            if state == "have_header" and line.strip() and not STAGE_RE.match(line):
-                if re.match(r"^\s+[A-Z]", line) and not re.search(r"\d", line):
-                    extra = [(m.start(), m.group()) for m in re.finditer(r"\S+", line)]
-                    new_cats = []
-                    for cx, name in categories:
-                        best_suffix, best_dist = None, float("inf")
-                        for ex, efrag in extra:
-                            d = abs(ex - cx)
-                            if d < best_dist:
-                                best_dist, best_suffix = d, efrag
-                        if best_suffix and best_dist <= 20:
-                            new_cats.append((cx, name + best_suffix))
-                        else:
-                            new_cats.append((cx, name))
-                    categories = new_cats
-                    continue
+            if (
+                state == "have_header"
+                and line.strip()
+                and not STAGE_RE.match(line)
+                and re.match(r"^\s+[A-Z]", line)
+                and not re.search(r"\d", line)
+            ):
+                extra = [(m.start(), m.group()) for m in re.finditer(r"\S+", line)]
+                new_cats = []
+                for cx, name in categories:
+                    best_suffix, best_dist = None, float("inf")
+                    for ex, efrag in extra:
+                        d = abs(ex - cx)
+                        if d < best_dist:
+                            best_dist, best_suffix = d, efrag
+                    if best_suffix and best_dist <= 20:
+                        new_cats.append((cx, name + best_suffix))
+                    else:
+                        new_cats.append((cx, name))
+                categories = new_cats
+                continue
 
             # Stage row (rank values)
             m = STAGE_RE.match(line)

@@ -1,6 +1,7 @@
-from parser import parse_pages, extract_text_per_page, get_page_count
-from pathlib import Path
 import csv
+from pathlib import Path
+
+from parser import extract_text_per_page, get_page_count, parse_pages
 
 FILES = {
     "2024ENGG_CAP1_CutOff.pdf": (2024, 1),

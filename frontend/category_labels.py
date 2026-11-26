@@ -23,7 +23,14 @@ PREFIXES = [
 
 MIDDLE_CATEGORIES = [
     "SEBC",  # check before OBC/SC since it contains no overlap but longer strings first is safer
-    "OPEN", "OBC", "SC", "ST", "VJ", "NT1", "NT2", "NT3",
+    "OPEN",
+    "OBC",
+    "SC",
+    "ST",
+    "VJ",
+    "NT1",
+    "NT2",
+    "NT3",
 ]
 
 SUFFIXES = [
@@ -56,7 +63,7 @@ def decode_category(code: str) -> str:
     for prefix_code, label in PREFIXES:
         if remaining.startswith(prefix_code):
             prefix_label = label
-            remaining = remaining[len(prefix_code):]
+            remaining = remaining[len(prefix_code) :]
             break
 
     suffix_label = None
