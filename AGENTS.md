@@ -22,3 +22,10 @@ CoRe uses a feature-first modular monolith under `backend/app/`:
    - Run `uv run ruff check .`, `uv run ruff format --check .`, `uv run pyright`, and `uv run pytest -v` before finishing changes.
    - Integration tests require `CORE_TEST_DATABASE_URL` pointing to an isolated test MySQL database (database name must be `core_test` or end with `_test`, never production).
 6. **PowerShell**: Use Windows PowerShell-compatible commands in docs and scripts.
+
+### Large Dataset Handling
+- Never read entire CSV, JSONL, or other large data files into context.
+- Inspect schemas, column names, dtypes, and a maximum of 10–20 sample rows.
+- Use Python scripts for dataset profiling and validation.
+- Exclude generated datasets, build artifacts, caches, and large binary files from agent context.
+- Never modify source datasets unless explicitly instructed.
