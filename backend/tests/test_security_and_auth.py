@@ -4,7 +4,11 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from backend.app.core.config import Settings, get_settings
-from backend.app.core.rate_limit import InMemoryRateLimiter, get_auth_rate_limiter
+from backend.app.core.rate_limit import (
+    InMemoryRateLimiter,
+    extract_client_ip,
+    get_auth_rate_limiter,
+)
 from backend.app.core.security import (
     create_access_token,
     decode_access_token,
@@ -85,7 +89,7 @@ def test_register_and_login_prevent_username_enumeration(test_settings: Settings
         existing_user = SimpleNamespace(
             id=5,
             username="pranav",
-            password=hash_password("correct-pw"),
+            password_hash=hash_password("correct-pw"),
         )
         found_result = MagicMock()
         found_result.scalar_one_or_none.return_value = existing_user
@@ -136,3 +140,31 @@ def test_auth_rate_limiter_enforces_limit(test_settings: Settings) -> None:
             assert resp.status_code == 401
         blocked = client.post("/auth/login", data={"username": "nobody", "password": "pw"})
         assert blocked.status_code == 429
+
+
+def test_rate_limiter_prunes_stale_buckets_and_respects_trusted_proxies(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    current_time = [100.0]
+    monkeypatch.setattr("backend.app.core.rate_limit.time.monotonic", lambda: current_time[0])
+
+    limiter = InMemoryRateLimiter()
+    assert limiter.check_and_record("1.2.3.4:/auth/login", max_requests=2, window_seconds=10)
+    assert limiter.tracked_key_count == 1
+
+    # Advance past both window and prune interval so stale key is evicted
+    current_time[0] = 200.0
+    assert limiter.check_and_record("5.6.7.8:/auth/login", max_requests=2, window_seconds=10)
+    assert limiter.tracked_key_count == 1
+
+    untrusted_req = SimpleNamespace(
+        client=SimpleNamespace(host="203.0.113.9"),
+        headers={"X-Forwarded-For": "10.0.0.1"},
+    )
+    assert extract_client_ip(untrusted_req, ["10.1.1.1"]) == "203.0.113.9"  # type: ignore[arg-type]
+
+    trusted_req = SimpleNamespace(
+        client=SimpleNamespace(host="10.1.1.1"),
+        headers={"X-Forwarded-For": "198.51.100.4, 10.1.1.1"},
+    )
+    assert extract_client_ip(trusted_req, ["10.1.1.1"]) == "198.51.100.4"  # type: ignore[arg-type]

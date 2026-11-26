@@ -28,7 +28,11 @@ class SavedListItem(Base):
         nullable=False,
     )
     college_code: Mapped[str] = mapped_column(String(10), nullable=False)
-    branch_code: Mapped[str] = mapped_column(String(15), nullable=False)
+    branch_code: Mapped[str] = mapped_column(
+        String(15),
+        ForeignKey("branches.branch_code"),
+        nullable=False,
+    )
     college_name: Mapped[str] = mapped_column(String(300), nullable=False)
     branch_name: Mapped[str] = mapped_column(String(300), nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False)

@@ -33,6 +33,10 @@ class Settings(BaseSettings):
         default_factory=lambda: ["http://localhost:8501", "http://127.0.0.1:8501"],
         validation_alias=AliasChoices("CORE_CORS_ORIGINS", "CORS_ORIGINS"),
     )
+    TRUSTED_PROXY_IPS: list[str] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("CORE_TRUSTED_PROXY_IPS", "TRUSTED_PROXY_IPS"),
+    )
 
     DB_HOST: str = Field(validation_alias=AliasChoices("CORE_DB_HOST", "DB_HOST"))
     DB_USER: str = Field(validation_alias=AliasChoices("CORE_DB_USER", "DB_USER"))

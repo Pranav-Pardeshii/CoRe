@@ -75,47 +75,15 @@ def load_cutoffs() -> None:
     connection = mysql.connector.connect(**db_config)
     cursor = connection.cursor()
     try:
-        # Transitional DDL guard until Alembic is stamped on all target environments.
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS colleges (
-                college_code VARCHAR(10) PRIMARY KEY,
-                college_name VARCHAR(300) NOT NULL,
-                status VARCHAR(300),
-                division VARCHAR(100)
+        cursor.execute("SHOW TABLES")
+        existing_tables = {row[0] for row in cursor.fetchall()}
+        required_tables = {"alembic_version", "colleges", "branches", "admission_cutoffs"}
+        missing_tables = sorted(required_tables - existing_tables)
+        if missing_tables:
+            raise RuntimeError(
+                f"Database schema is not initialized for Alembic (missing: {missing_tables}). "
+                "Run 'uv run alembic -c backend/alembic.ini upgrade head' before running ETL."
             )
-            """
-        )
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS branches (
-                branch_code VARCHAR(15) PRIMARY KEY,
-                branch_name VARCHAR(300) NOT NULL,
-                college_code VARCHAR(10) NOT NULL,
-                FOREIGN KEY (college_code) REFERENCES colleges(college_code)
-            )
-            """
-        )
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS admission_cutoffs (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                branch_code VARCHAR(15) NOT NULL,
-                admission_year SMALLINT NOT NULL,
-                cap_round TINYINT NOT NULL,
-                level VARCHAR(10) NOT NULL,
-                admission_stage VARCHAR(5) NOT NULL,
-                category VARCHAR(20) NOT NULL,
-                merit_rank INT NOT NULL,
-                percentile FLOAT NOT NULL,
-                FOREIGN KEY (branch_code) REFERENCES branches(branch_code),
-                UNIQUE KEY uq_admission_cutoffs_composite (
-                    branch_code, admission_year, cap_round, level, admission_stage, category
-                )
-            )
-            """
-        )
-        connection.commit()
 
         cursor.executemany(
             """

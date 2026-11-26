@@ -6,7 +6,10 @@ import pytest
 from backend.app.core.config import Settings
 from backend.app.infrastructure.database.session import get_db_session
 from backend.app.main import create_app
-from backend.tests.conftest import get_validated_test_database_url
+from backend.tests.conftest import (
+    get_validated_test_database_url,
+    require_destructive_test_opt_in,
+)
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 from sqlalchemy.exc import OperationalError
@@ -161,23 +164,52 @@ def test_sqlalchemy_error_does_not_leak_internal_details(test_settings: Settings
     [
         "mysql+asyncmy://u:p@mysql-core.aivencloud.com:10944/core_test",
         "mysql+asyncmy://u:p@prod-db.example.com:3306/core_test",
+        "mysql+asyncmy://u:p@unknown-remote.example.com:3306/core_test",
         "mysql+pymysql://u:p@localhost:3306/core_test",
         "sqlite+aiosqlite:///test.db",
         "mysql+asyncmy://u:p@localhost:3306/defaultdb",
+        "mysql+asyncmy://u:p@localhost:3306/test_app",
     ],
 )
 def test_integration_safety_guard_rejects_unsafe_urls(
     monkeypatch: pytest.MonkeyPatch,
     bad_url: str,
 ) -> None:
+    monkeypatch.delenv("CORE_TEST_ALLOWED_HOSTS", raising=False)
     monkeypatch.setenv("CORE_TEST_DATABASE_URL", bad_url)
     with pytest.raises(pytest.fail.Exception):
         get_validated_test_database_url()
 
 
-def test_integration_safety_guard_accepts_isolated_test_url(
+@pytest.mark.parametrize(
+    "loopback_url",
+    [
+        "mysql+asyncmy://root@127.0.0.1:13306/core_test",
+        "mysql+asyncmy://root@localhost:3306/ci_test",
+    ],
+)
+def test_integration_safety_guard_accepts_loopback_test_urls(
+    monkeypatch: pytest.MonkeyPatch,
+    loopback_url: str,
+) -> None:
+    monkeypatch.delenv("CORE_TEST_ALLOWED_HOSTS", raising=False)
+    monkeypatch.setenv("CORE_TEST_DATABASE_URL", loopback_url)
+    assert get_validated_test_database_url() == loopback_url
+
+
+def test_integration_safety_guard_allows_explicitly_allowlisted_remote_host(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    safe_url = "mysql+asyncmy://root@127.0.0.1:13306/core_test"
-    monkeypatch.setenv("CORE_TEST_DATABASE_URL", safe_url)
-    assert get_validated_test_database_url() == safe_url
+    remote_url = "mysql+asyncmy://ci:pw@ci-mysql.internal:3306/core_test"
+    monkeypatch.setenv("CORE_TEST_DATABASE_URL", remote_url)
+    monkeypatch.setenv("CORE_TEST_ALLOWED_HOSTS", "ci-mysql.internal")
+    assert get_validated_test_database_url() == remote_url
+
+
+def test_destructive_opt_in_fails_closed_without_flag(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("CORE_TEST_ALLOW_DESTRUCTIVE", raising=False)
+    with pytest.raises(pytest.fail.Exception):
+        require_destructive_test_opt_in()
+
+    monkeypatch.setenv("CORE_TEST_ALLOW_DESTRUCTIVE", "1")
+    require_destructive_test_opt_in()

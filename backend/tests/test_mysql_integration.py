@@ -7,7 +7,10 @@ from alembic.config import Config
 from backend.app.core.config import Settings
 from backend.app.main import create_app
 from backend.app.modules.catalog.models import AdmissionCutoff, Branch, College
-from backend.tests.conftest import get_validated_test_database_url
+from backend.tests.conftest import (
+    get_validated_test_database_url,
+    require_destructive_test_opt_in,
+)
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
@@ -44,8 +47,9 @@ async def _reset_test_schema(test_url: str) -> None:
 
 
 async def test_legacy_0001_to_0002_migration_preserves_existing_data() -> None:
-    """Verify upgrading a populated 0001 legacy schema to 0002 preserves all records."""
+    """Verify upgrading a populated 0001 legacy schema to 0003 preserves all records."""
     test_url = get_validated_test_database_url()
+    require_destructive_test_opt_in()
     await _reset_test_schema(test_url)
     await asyncio.to_thread(_run_alembic, test_url, "upgrade", "0001_initial_schema")
 
@@ -120,6 +124,7 @@ async def test_legacy_0001_to_0002_migration_preserves_existing_data() -> None:
 
 async def test_mysql_migrations_and_end_to_end_flows() -> None:
     test_url = get_validated_test_database_url()
+    require_destructive_test_opt_in()
     await _reset_test_schema(test_url)
     await asyncio.to_thread(_run_alembic, test_url, "upgrade", "head")
     await asyncio.to_thread(_run_alembic, test_url, "check")

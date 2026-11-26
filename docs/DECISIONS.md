@@ -12,4 +12,6 @@
    - Preserves `/auth/*`, `/recommender/`, `/trends/`, `/saved-lists/`, `/`, and `/ping` paths and response shapes so `frontend/` works without immediate changes.
    - Aligns `/recommender/` `percentile` lower bound to `0` (`ge=0, le=100`) to match Streamlit's `0.0–100.0` input.
 5. **Fail-Closed Test Safety**:
-   - Integration tests read `CORE_TEST_DATABASE_URL` and fail closed if the scheme is not `mysql+asyncmy`, the host looks like production/Aiven, or the database name does not contain `test`.
+   - Integration tests read `CORE_TEST_DATABASE_URL` and fail closed unless the scheme is `mysql+asyncmy`, the host is loopback (or explicitly in `CORE_TEST_ALLOWED_HOSTS`), the database name is `core_test` or ends with `_test`, and `CORE_TEST_ALLOW_DESTRUCTIVE=1` is set.
+6. **Process-Local Auth Rate Limiting**:
+   - `InMemoryRateLimiter` uses bounded bucket pruning and `CORE_TRUSTED_PROXY_IPS` for `X-Forwarded-For` extraction. Because counters are process-local, multi-worker or multi-instance Cloud Run deployments require edge/load-balancer rate limiting for global enforcement.

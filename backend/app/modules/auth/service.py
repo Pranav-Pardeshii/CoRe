@@ -43,7 +43,7 @@ class AuthService:
         settings: Settings,
     ) -> TokenResponse:
         user = await self._repository.get_by_username(session, username=username)
-        if user is None or not verify_password(password, user.password):
+        if user is None or not verify_password(password, user.password_hash):
             raise UnauthorizedError("Invalid username or password.")
 
         token = create_access_token(

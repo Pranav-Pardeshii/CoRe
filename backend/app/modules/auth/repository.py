@@ -13,7 +13,7 @@ class AuthRepository:
         return result.scalar_one_or_none()
 
     async def create_user(self, session: AsyncSession, username: str, hashed_password: str) -> User:
-        user = User(username=username, password=hashed_password)
+        user = User(username=username, password_hash=hashed_password)
         session.add(user)
         await session.flush()
         return user
