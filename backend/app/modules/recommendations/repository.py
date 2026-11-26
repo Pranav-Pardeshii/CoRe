@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql import Select
@@ -9,14 +11,26 @@ from backend.app.modules.recommendations.schemas import EligibleCollegeOut
 class RecommendationsRepository:
     """SQLAlchemy queries for MHT-CET college eligibility recommendations."""
 
+    async def get_latest_years(self, session: AsyncSession, limit: int = 2) -> list[int]:
+        """Return the latest distinct admission years present in admission_cutoffs."""
+        stmt = (
+            select(AdmissionCutoff.admission_year)
+            .distinct()
+            .order_by(AdmissionCutoff.admission_year.desc())
+            .limit(limit)
+        )
+        result = await session.execute(stmt)
+        return [int(row[0]) for row in result.all()]
+
     @staticmethod
     def _build_filtered_grouped_query(
         *,
+        years: list[int],
         percentile: float,
         category: str | None,
         branch: str | None,
         division: str | None,
-    ) -> Select[str, str, str, float, float]:
+    ) -> Select[str, str, str, Decimal, Decimal]:
         stmt = (
             select(
                 College.college_name,
@@ -28,7 +42,7 @@ class RecommendationsRepository:
             .join(Branch, AdmissionCutoff.branch_code == Branch.branch_code)
             .join(College, Branch.college_code == College.college_code)
             .where(
-                AdmissionCutoff.admission_year.in_([2024, 2025]),
+                AdmissionCutoff.admission_year.in_(years),
                 AdmissionCutoff.admission_stage == "I",
             )
         )
@@ -55,26 +69,36 @@ class RecommendationsRepository:
         division: str | None,
         limit: int,
         offset: int,
+        years: list[int] | None = None,
     ) -> tuple[list[EligibleCollegeOut], int]:
+        target_years = years if years is not None else await self.get_latest_years(session, limit=2)
+        if not target_years:
+            return [], 0
+
         base_stmt = self._build_filtered_grouped_query(
+            years=target_years,
             percentile=percentile,
             category=category,
             branch=branch,
             division=division,
         )
-        count_stmt = select(func.count()).select_from(base_stmt.subquery())
-        count_result = await session.execute(count_stmt)
-        total_count = int(count_result.scalar_one())
-
-        if total_count == 0:
-            return [], 0
-
-        data_stmt = (
-            base_stmt.order_by(func.max(AdmissionCutoff.percentile).desc())
+        windowed_stmt = (
+            base_stmt.add_columns(func.count().over().label("total_count"))
+            .order_by(func.max(AdmissionCutoff.percentile).desc())
             .limit(limit)
             .offset(offset)
         )
-        query_result = await session.execute(data_stmt)
+        query_result = await session.execute(windowed_stmt)
+        rows = query_result.all()
+
+        if not rows:
+            if offset == 0:
+                return [], 0
+            count_stmt = select(func.count()).select_from(base_stmt.subquery())
+            total_count = int((await session.execute(count_stmt)).scalar_one())
+            return [], total_count
+
+        total_count = int(rows[0][5])
         college_records = [
             EligibleCollegeOut(
                 college=row[0],
@@ -83,6 +107,6 @@ class RecommendationsRepository:
                 min_cutoff=float(row[3]),
                 max_cutoff=float(row[4]),
             )
-            for row in query_result.all()
+            for row in rows
         ]
         return college_records, total_count

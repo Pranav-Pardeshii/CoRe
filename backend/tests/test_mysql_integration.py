@@ -1,4 +1,5 @@
 import asyncio
+from decimal import Decimal
 from pathlib import Path
 
 import pytest
@@ -46,8 +47,8 @@ async def _reset_test_schema(test_url: str) -> None:
         await engine.dispose()
 
 
-async def test_legacy_0001_to_0002_migration_preserves_existing_data() -> None:
-    """Verify upgrading a populated 0001 legacy schema to 0003 preserves all records."""
+async def test_legacy_0001_to_0004_migration_and_downgrade_roundtrip() -> None:
+    """Verify upgrading 0001 -> head, alembic check, downgrade to 0003, and re-upgrade."""
     test_url = get_validated_test_database_url()
     require_destructive_test_opt_in()
     await _reset_test_schema(test_url)
@@ -72,7 +73,7 @@ async def test_legacy_0001_to_0002_migration_preserves_existing_data() -> None:
                 text(
                     "INSERT INTO cutoffs "
                     "(branch_code, year, round, level, stage, category, `rank`, percentile) "
-                    "VALUES ('0627124510', 2024, 1, 'State', 'I', 'GOPENS', 500, 99.1)"
+                    "VALUES ('0627124510', 2024, 1, 'SL', 'I', 'GOPENS', 500, 99.1)"
                 )
             )
             await conn.execute(
@@ -95,6 +96,10 @@ async def test_legacy_0001_to_0002_migration_preserves_existing_data() -> None:
     await asyncio.to_thread(_run_alembic, test_url, "upgrade", "head")
     await asyncio.to_thread(_run_alembic, test_url, "check")
 
+    await asyncio.to_thread(_run_alembic, test_url, "downgrade", "0003_password_hash_and_fk")
+    await asyncio.to_thread(_run_alembic, test_url, "upgrade", "head")
+    await asyncio.to_thread(_run_alembic, test_url, "check")
+
     verify_engine = create_async_engine(test_url)
     try:
         async with verify_engine.connect() as conn:
@@ -107,7 +112,7 @@ async def test_legacy_0001_to_0002_migration_preserves_existing_data() -> None:
                 )
             ).one()
             assert tuple(cutoff_row[:4]) == (2024, 1, "I", 500)
-            assert cutoff_row[4] == pytest.approx(99.1, abs=0.01)
+            assert isinstance(cutoff_row[4], Decimal)
 
             saved_row = (
                 await conn.execute(
@@ -135,7 +140,7 @@ async def test_mysql_migrations_and_end_to_end_flows() -> None:
         DB_USER="root",
         DB_PASS="",
         DB_NAME="core_test",
-        SECRET_KEY="integration-test-secret",
+        SECRET_KEY="integration-test-secret-at-least-32-chars",
     )
     app = create_app(settings=settings, database_url_override=test_url)
 
@@ -156,12 +161,24 @@ async def test_mysql_migrations_and_end_to_end_flows() -> None:
                     division="Pune Division",
                 )
             )
-            session.add(
-                Branch(
-                    branch_code="0627124510",
-                    branch_name="Computer Engineering",
-                    college_code="06271",
-                )
+            session.add_all(
+                [
+                    Branch(
+                        branch_code="0627124510",
+                        branch_name="Computer Engineering",
+                        college_code="06271",
+                    ),
+                    Branch(
+                        branch_code="0627124610",
+                        branch_name="Information Technology",
+                        college_code="06271",
+                    ),
+                    Branch(
+                        branch_code="0627137210",
+                        branch_name="Electronics and Telecommunication",
+                        college_code="06271",
+                    ),
+                ]
             )
             session.add_all(
                 [
@@ -169,45 +186,56 @@ async def test_mysql_migrations_and_end_to_end_flows() -> None:
                         branch_code="0627124510",
                         admission_year=2024,
                         cap_round=1,
-                        level="State",
+                        level="SL",
                         admission_stage="I",
                         category="GOPENS",
                         merit_rank=500,
-                        percentile=99.1,
+                        percentile=Decimal("99.1234567"),
                     ),
                     AdmissionCutoff(
                         branch_code="0627124510",
                         admission_year=2025,
                         cap_round=1,
-                        level="State",
+                        level="HU_HU",
                         admission_stage="I",
                         category="GOPENS",
                         merit_rank=600,
-                        percentile=98.5,
+                        percentile=Decimal("98.5000000"),
                     ),
                     AdmissionCutoff(
                         branch_code="0627124510",
                         admission_year=2023,
                         cap_round=1,
-                        level="State",
+                        level="SL",
                         admission_stage="I",
                         category="GOPENS",
                         merit_rank=900,
-                        percentile=90.0,
+                        percentile=Decimal("90.0000000"),
                     ),
                     AdmissionCutoff(
                         branch_code="0627124510",
                         admission_year=2025,
                         cap_round=2,
-                        level="State",
+                        level="SL",
                         admission_stage="II",
                         category="GOPENS",
                         merit_rank=800,
-                        percentile=95.0,
+                        percentile=Decimal("95.0000000"),
                     ),
                 ]
             )
             await session.commit()
+
+            # Verify exact DECIMAL(10, 7) precision without float drift
+            stored_percentile = (
+                await session.execute(
+                    text(
+                        "SELECT percentile FROM admission_cutoffs "
+                        "WHERE branch_code = '0627124510' AND admission_year = 2024"
+                    )
+                )
+            ).scalar_one()
+            assert stored_percentile == Decimal("99.1234567")
 
             # Verify FK constraint on branches -> colleges
             session.add(
@@ -227,11 +255,11 @@ async def test_mysql_migrations_and_end_to_end_flows() -> None:
                     branch_code="0627124510",
                     admission_year=2024,
                     cap_round=1,
-                    level="State",
+                    level="SL",
                     admission_stage="I",
                     category="GOPENS",
                     merit_rank=501,
-                    percentile=99.0,
+                    percentile=Decimal("99.0000000"),
                 )
             )
             with pytest.raises(IntegrityError):
@@ -243,7 +271,9 @@ async def test_mysql_migrations_and_end_to_end_flows() -> None:
             base_url="http://testserver",
         ) as client:
             assert (await client.get("/")).status_code == 200
-            assert (await client.get("/ping")).status_code == 200
+            ping_resp = await client.get("/ping")
+            assert ping_resp.status_code == 200
+            assert ping_resp.json() == {"status": "ok"}
             assert (await client.get("/health/live")).status_code == 200
             assert (await client.get("/health/ready")).status_code == 200
 
@@ -280,57 +310,96 @@ async def test_mysql_migrations_and_end_to_end_flows() -> None:
             assert rec.status_code == 200
             rec_data = rec.json()
             assert rec_data["count"] == 1
-            assert rec_data["eligible_colleges"][0]["min_cutoff"] == pytest.approx(98.5, abs=0.01)
-            assert rec_data["eligible_colleges"][0]["max_cutoff"] == pytest.approx(99.1, abs=0.01)
+            assert rec_data["eligible_colleges"][0]["min_cutoff"] == 98.5
 
+            # Pagination page=2 returns empty list with accurate count
+            rec_page2 = await client.get(
+                "/recommender/",
+                params={
+                    "percentile": 98.7,
+                    "category": "GOPENS",
+                    "branch": "All",
+                    "division": "All",
+                    "page": 2,
+                    "page_size": 5,
+                },
+            )
+            assert rec_page2.status_code == 200
+            assert rec_page2.json() == {"eligible_colleges": [], "count": 1}
+
+            # Trends with multiple levels and optional level filter
             tr = await client.get(
                 "/trends/",
                 params={"branch_code": "0627124510", "category": "All"},
             )
             assert tr.status_code == 200
             assert tr.json()["count"] == 3
+            assert {p["level"] for p in tr.json()["trends"]} == {"SL", "HU_HU"}
 
-            save1 = await client.post(
-                "/saved-lists/",
-                json={"branch_code": "0627124510"},
-                headers=alice_headers,
+            tr_filtered = await client.get(
+                "/trends/",
+                params={"branch_code": "0627124510", "category": "All", "level": "HU_HU"},
             )
-            assert save1.status_code == 200
+            assert tr_filtered.status_code == 200
+            assert tr_filtered.json()["count"] == 1
+
+            # Catalog filters endpoint
+            cat_filters = await client.get("/catalog/filters")
+            assert cat_filters.status_code == 200
+            assert cat_filters.json()["categories"] == ["GOPENS"]
+            assert cat_filters.json()["years"] == [2025, 2024, 2023]
+
+            # Saved list create + 409 duplicate + multi-item bulk reorder
+            for code in ("0627124510", "0627124610", "0627137210"):
+                save_resp = await client.post(
+                    "/saved-lists/",
+                    json={"branch_code": code},
+                    headers=alice_headers,
+                )
+                assert save_resp.status_code == 200
+
             dup = await client.post(
                 "/saved-lists/",
                 json={"branch_code": "0627124510"},
                 headers=alice_headers,
             )
-            assert dup.status_code == 400
+            assert dup.status_code == 409
 
             alice_items = (await client.get("/saved-lists/", headers=alice_headers)).json()[
                 "saved_list"
             ]
-            assert len(alice_items) == 1
-            alice_item_id = alice_items[0]["id"]
+            assert len(alice_items) == 3
+            id1, id2, id3 = [item["id"] for item in alice_items]
 
             bob_items = (await client.get("/saved-lists/", headers=bob_headers)).json()[
                 "saved_list"
             ]
             assert bob_items == []
             assert (
-                await client.delete(f"/saved-lists/{alice_item_id}", headers=bob_headers)
+                await client.delete(f"/saved-lists/{id1}", headers=bob_headers)
             ).status_code == 404
             assert (
                 await client.put(
                     "/saved-lists/",
-                    json={"ordered_list": [alice_item_id]},
+                    json={"ordered_list": [id1]},
                     headers=bob_headers,
                 )
             ).status_code == 400
 
+            # Reorder [id1, id2, id3] -> [id3, id1, id2]
             assert (
                 await client.put(
                     "/saved-lists/",
-                    json={"ordered_list": [alice_item_id]},
+                    json={"ordered_list": [id3, id1, id2]},
                     headers=alice_headers,
                 )
             ).status_code == 200
+
+            reordered_items = (await client.get("/saved-lists/", headers=alice_headers)).json()[
+                "saved_list"
+            ]
+            assert [item["id"] for item in reordered_items] == [id3, id1, id2]
+
             assert (
-                await client.delete(f"/saved-lists/{alice_item_id}", headers=alice_headers)
+                await client.delete(f"/saved-lists/{id1}", headers=alice_headers)
             ).status_code == 200

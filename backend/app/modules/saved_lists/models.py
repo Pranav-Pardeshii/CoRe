@@ -1,10 +1,14 @@
+from datetime import datetime
+
 from sqlalchemy import (
+    TIMESTAMP,
     CheckConstraint,
     ForeignKey,
     Index,
     Integer,
     String,
     UniqueConstraint,
+    func,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -36,3 +40,14 @@ class SavedListItem(Base):
     college_name: Mapped[str] = mapped_column(String(300), nullable=False)
     branch_name: Mapped[str] = mapped_column(String(300), nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP,
+        server_default=func.now(),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP,
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )

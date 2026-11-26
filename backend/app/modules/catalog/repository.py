@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.modules.catalog.models import Branch, College
+from backend.app.modules.catalog.models import AdmissionCutoff, Branch, College
+from backend.app.modules.catalog.schemas import CatalogFiltersResponse
 
 
 @dataclass(frozen=True)
@@ -16,7 +17,7 @@ class BranchCollegeInfo:
 
 
 class CatalogRepository:
-    """Read-only catalog lookups across colleges and branches."""
+    """Read-only catalog lookups across colleges, branches, and cutoff metadata."""
 
     async def get_branch_with_college(
         self,
@@ -36,4 +37,35 @@ class CatalogRepository:
             college_code=row[0],
             college_name=row[1],
             branch_name=row[2],
+        )
+
+    async def get_filter_options(self, session: AsyncSession) -> CatalogFiltersResponse:
+        """Fetch sorted distinct filter options from MySQL."""
+        categories_res = await session.execute(
+            select(AdmissionCutoff.category).distinct().order_by(AdmissionCutoff.category.asc())
+        )
+        branches_res = await session.execute(
+            select(Branch.branch_name).distinct().order_by(Branch.branch_name.asc())
+        )
+        divisions_res = await session.execute(
+            select(College.division)
+            .where(College.division.is_not(None), College.division != "")
+            .distinct()
+            .order_by(College.division.asc())
+        )
+        years_res = await session.execute(
+            select(AdmissionCutoff.admission_year)
+            .distinct()
+            .order_by(AdmissionCutoff.admission_year.desc())
+        )
+        levels_res = await session.execute(
+            select(AdmissionCutoff.level).distinct().order_by(AdmissionCutoff.level.asc())
+        )
+
+        return CatalogFiltersResponse(
+            categories=[str(row[0]) for row in categories_res.all()],
+            branches=[str(row[0]) for row in branches_res.all()],
+            divisions=[str(row[0]) for row in divisions_res.all() if row[0] is not None],
+            years=[int(row[0]) for row in years_res.all()],
+            levels=[str(row[0]) for row in levels_res.all()],
         )

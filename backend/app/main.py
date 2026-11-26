@@ -1,4 +1,5 @@
 import logging
+import re
 import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -14,10 +15,35 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.app.api.v1.router import api_router
 from backend.app.core.config import Settings, get_settings
 from backend.app.core.exceptions import register_exception_handlers
-from backend.app.core.logging import configure_logging, set_request_id
+from backend.app.core.logging import (
+    configure_logging,
+    reset_request_id,
+    reset_trace_id,
+    set_request_id,
+    set_trace_id,
+)
+from backend.app.core.rate_limit import enforce_public_rate_limit
 from backend.app.infrastructure.database.session import DatabaseManager, get_db_session
 
 logger = logging.getLogger(__name__)
+
+_REQUEST_ID_RE = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+_NO_STORE_PREFIXES = ("/auth", "/saved-lists")
+
+
+def _sanitize_request_id(raw_value: str | None) -> str:
+    if raw_value and _REQUEST_ID_RE.match(raw_value):
+        return raw_value
+    return uuid.uuid4().hex
+
+
+def _extract_trace_id(header_value: str | None) -> str:
+    if not header_value:
+        return ""
+    trace_part = header_value.split("/", 1)[0].strip()
+    if _REQUEST_ID_RE.match(trace_part):
+        return trace_part
+    return ""
 
 
 def create_app(
@@ -48,26 +74,40 @@ def create_app(
         redoc_url="/redoc" if docs_enabled else None,
         lifespan=lifespan,
     )
+    application.state.settings = resolved_settings
 
     application.add_middleware(
         CORSMiddleware,
         allow_origins=resolved_settings.CORS_ORIGINS,
-        allow_credentials=True,
+        allow_credentials=False,
         allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
     )
 
     @application.middleware("http")
-    async def request_context_middleware(
+    async def request_context_and_security_headers(
         request: Request,
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
-        request_id = request.headers.get("X-Request-ID") or uuid.uuid4().hex
-        set_request_id(request_id)
+        request_id = _sanitize_request_id(request.headers.get("X-Request-ID"))
+        trace_id = _extract_trace_id(request.headers.get("X-Cloud-Trace-Context"))
+        req_token = set_request_id(request_id)
+        trace_token = set_trace_id(trace_id)
         started_at = time.monotonic()
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        finally:
+            reset_trace_id(trace_token)
+            reset_request_id(req_token)
+
         duration_ms = round((time.monotonic() - started_at) * 1000, 2)
         response.headers["X-Request-ID"] = request_id
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        if request.url.path.startswith(_NO_STORE_PREFIXES):
+            response.headers["Cache-Control"] = "no-store"
+
         logger.info(
             "method=%s path=%s status=%s duration_ms=%s",
             request.method,
@@ -84,10 +124,14 @@ def create_app(
     async def home() -> dict[str, str]:
         return {"message": "MHT-CET College Predictor"}
 
-    @application.api_route("/ping", methods=["GET", "HEAD"])
+    @application.api_route(
+        "/ping",
+        methods=["GET", "HEAD"],
+        dependencies=[Depends(enforce_public_rate_limit)],
+    )
     async def ping(session: AsyncSession = Depends(get_db_session)) -> dict[str, str]:
         await session.execute(text("SELECT 1"))
-        return {"status": "Aiven MySQL Database is awake!"}
+        return {"status": "ok"}
 
     @application.get("/health/live")
     async def liveness() -> dict[str, str]:
@@ -105,6 +149,3 @@ def create_app(
         return JSONResponse(status_code=status.HTTP_200_OK, content={"status": "ready"})
 
     return application
-
-
-app = create_app()

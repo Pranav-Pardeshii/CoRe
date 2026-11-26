@@ -1,12 +1,17 @@
+from datetime import datetime
+from decimal import Decimal
+
 from sqlalchemy import (
+    TIMESTAMP,
     CheckConstraint,
-    Float,
     ForeignKey,
     Index,
     Integer,
+    Numeric,
     SmallInteger,
     String,
     UniqueConstraint,
+    func,
 )
 from sqlalchemy.dialects.mysql import TINYINT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -18,6 +23,7 @@ class College(Base):
     """Engineering institution participating in MHT-CET CAP."""
 
     __tablename__ = "colleges"
+    __table_args__ = (Index("ix_colleges_division", "division"),)
 
     college_code: Mapped[str] = mapped_column(String(10), primary_key=True)
     college_name: Mapped[str] = mapped_column(String(300), nullable=False)
@@ -31,7 +37,10 @@ class Branch(Base):
     """Academic branch offered by a college."""
 
     __tablename__ = "branches"
-    __table_args__ = (Index("ix_branches_college_code", "college_code"),)
+    __table_args__ = (
+        Index("ix_branches_college_code", "college_code"),
+        Index("ix_branches_branch_name_college_code", "branch_name", "college_code"),
+    )
 
     branch_code: Mapped[str] = mapped_column(String(15), primary_key=True)
     branch_name: Mapped[str] = mapped_column(String(300), nullable=False)
@@ -65,10 +74,18 @@ class AdmissionCutoff(Base):
         ),
         Index(
             "ix_admission_cutoffs_recommender",
-            "admission_year",
             "admission_stage",
             "category",
+            "admission_year",
             "branch_code",
+            "percentile",
+        ),
+        Index(
+            "ix_admission_cutoffs_stage_year_branch",
+            "admission_stage",
+            "admission_year",
+            "branch_code",
+            "percentile",
         ),
         Index(
             "ix_admission_cutoffs_trends",
@@ -92,6 +109,11 @@ class AdmissionCutoff(Base):
     admission_stage: Mapped[str] = mapped_column(String(5), nullable=False)
     category: Mapped[str] = mapped_column(String(20), nullable=False)
     merit_rank: Mapped[int] = mapped_column(Integer, nullable=False)
-    percentile: Mapped[float] = mapped_column(Float, nullable=False)
+    percentile: Mapped[Decimal] = mapped_column(Numeric(10, 7), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP,
+        server_default=func.now(),
+        nullable=False,
+    )
 
     branch: Mapped["Branch"] = relationship(back_populates="cutoffs")

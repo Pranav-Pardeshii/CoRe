@@ -6,6 +6,7 @@ class TrendsQuery(BaseModel):
 
     branch_code: str
     category: str
+    level: str | None = None
 
 
 class TrendPointOut(BaseModel):
@@ -13,6 +14,7 @@ class TrendPointOut(BaseModel):
 
     year: int
     round: int
+    level: str
     percentile: float
 
 

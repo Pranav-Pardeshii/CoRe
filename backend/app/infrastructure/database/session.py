@@ -29,6 +29,9 @@ class DatabaseManager:
         """Initialize the async engine and session factory without module-import side effects."""
         connect_args: dict[str, Any] = {}
         if url_override is None:
+            connect_args["connect_timeout"] = settings.DB_CONNECT_TIMEOUT
+            if settings.DB_UNIX_SOCKET and settings.DB_UNIX_SOCKET.strip():
+                connect_args["unix_socket"] = settings.DB_UNIX_SOCKET.strip()
             ssl_context = settings.build_ssl_context()
             if ssl_context is not None:
                 connect_args["ssl"] = ssl_context
@@ -38,6 +41,7 @@ class DatabaseManager:
             target_url,
             pool_size=settings.DB_POOL_SIZE,
             max_overflow=settings.DB_MAX_OVERFLOW,
+            pool_timeout=settings.DB_POOL_TIMEOUT,
             pool_pre_ping=True,
             pool_recycle=settings.DB_POOL_RECYCLE,
             connect_args=connect_args,

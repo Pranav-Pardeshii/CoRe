@@ -1,3 +1,5 @@
-from backend.app.main import app, create_app
+"""ASGI factory entrypoint for ``uvicorn backend.main:create_app --factory``."""
 
-__all__ = ["app", "create_app"]
+from backend.app.main import create_app
+
+__all__ = ["create_app"]

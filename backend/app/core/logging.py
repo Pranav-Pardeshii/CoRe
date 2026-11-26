@@ -1,8 +1,10 @@
+import json
 import logging
 import sys
-from contextvars import ContextVar
+from contextvars import ContextVar, Token
 
 _request_id_ctx: ContextVar[str] = ContextVar("request_id", default="-")
+_trace_ctx: ContextVar[str] = ContextVar("trace_id", default="")
 
 
 def get_request_id() -> str:
@@ -10,30 +12,64 @@ def get_request_id() -> str:
     return _request_id_ctx.get()
 
 
-def set_request_id(request_id: str) -> None:
+def set_request_id(request_id: str) -> Token[str]:
     """Bind a request correlation ID to the current async context."""
-    _request_id_ctx.set(request_id)
+    return _request_id_ctx.set(request_id)
+
+
+def reset_request_id(token: Token[str]) -> None:
+    """Reset the request correlation ID ContextVar."""
+    _request_id_ctx.reset(token)
+
+
+def get_trace_id() -> str:
+    """Return the current Google Cloud trace ID if present."""
+    return _trace_ctx.get()
+
+
+def set_trace_id(trace_id: str) -> Token[str]:
+    """Bind a Google Cloud trace ID to the current async context."""
+    return _trace_ctx.set(trace_id)
+
+
+def reset_trace_id(token: Token[str]) -> None:
+    """Reset the Google Cloud trace ID ContextVar."""
+    _trace_ctx.reset(token)
 
 
 class RequestIdFilter(logging.Filter):
-    """Inject request_id into every log record."""
+    """Inject request_id and trace_id into every log record."""
 
     def filter(self, record: logging.LogRecord) -> bool:
         record.request_id = get_request_id()
+        record.trace_id = get_trace_id()
         return True
 
 
+class JsonLogFormatter(logging.Formatter):
+    """Format log records as JSON compatible with Google Cloud Logging."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        payload: dict[str, object] = {
+            "severity": record.levelname,
+            "message": record.getMessage(),
+            "logger": record.name,
+            "request_id": getattr(record, "request_id", "-"),
+        }
+        trace_id = getattr(record, "trace_id", "")
+        if trace_id:
+            payload["logging.googleapis.com/trace"] = trace_id
+        if record.exc_info:
+            payload["exception"] = self.formatException(record.exc_info)
+        return json.dumps(payload, ensure_ascii=False)
+
+
 def configure_logging(level: str = "INFO") -> None:
-    """Configure structured application logging without exposing secrets."""
+    """Configure structured JSON application logging without exposing secrets."""
     resolved_level = getattr(logging, level.upper(), logging.INFO)
     handler = logging.StreamHandler(sys.stdout)
     handler.addFilter(RequestIdFilter())
-    handler.setFormatter(
-        logging.Formatter(
-            "%(asctime)s level=%(levelname)s logger=%(name)s "
-            "request_id=%(request_id)s msg=%(message)s"
-        )
-    )
+    handler.setFormatter(JsonLogFormatter())
 
     root_logger = logging.getLogger()
     root_logger.handlers.clear()

@@ -1,13 +1,29 @@
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.core.exceptions import AppError, ConflictError, NotFoundError
+from backend.app.core.exceptions import (
+    AppError,
+    ConflictError,
+    NotFoundError,
+    UnauthorizedError,
+)
 from backend.app.modules.catalog.repository import CatalogRepository
 from backend.app.modules.saved_lists.repository import SavedListRepository
 from backend.app.modules.saved_lists.schemas import (
     SavedListMessageResponse,
     SavedListResponse,
 )
+
+MAX_SAVED_LIST_ITEMS = 100
+_MYSQL_DUPLICATE_ENTRY_ERRNO = 1062
+
+
+def _is_duplicate_entry_error(exc: IntegrityError) -> bool:
+    orig = getattr(exc, "orig", None)
+    args = getattr(orig, "args", None)
+    if args and args[0] == _MYSQL_DUPLICATE_ENTRY_ERRNO:
+        return True
+    return "duplicate" in str(exc).lower()
 
 
 class SavedListService:
@@ -33,7 +49,21 @@ class SavedListService:
             raise AppError("Invalid college_code or branch_code!", status_code=400)
 
         try:
-            max_sort_order = await self._repository.get_max_sort_order_for_update(session, user_id)
+            user_exists = await self._repository.lock_user_for_update(session, user_id)
+            if not user_exists:
+                await session.rollback()
+                raise UnauthorizedError("User account not found.")
+
+            item_count, max_sort_order = await self._repository.get_count_and_max_sort_order(
+                session, user_id
+            )
+            if item_count >= MAX_SAVED_LIST_ITEMS:
+                await session.rollback()
+                raise AppError(
+                    f"Saved list limit of {MAX_SAVED_LIST_ITEMS} items reached.",
+                    status_code=400,
+                )
+
             next_sort_order = 1 if max_sort_order is None else max_sort_order + 1
             await self._repository.create_item(
                 session,
@@ -47,7 +77,11 @@ class SavedListService:
             await session.commit()
         except IntegrityError as exc:
             await session.rollback()
-            raise ConflictError("You already saved this Item") from exc
+            if _is_duplicate_entry_error(exc):
+                raise ConflictError("You already saved this Item") from exc
+            raise AppError("Unable to save item due to data constraint.", status_code=400) from exc
+        except AppError:
+            raise
         except Exception:
             await session.rollback()
             raise
@@ -62,6 +96,11 @@ class SavedListService:
         item_id: int,
     ) -> SavedListMessageResponse:
         try:
+            user_exists = await self._repository.lock_user_for_update(session, user_id)
+            if not user_exists:
+                await session.rollback()
+                raise UnauthorizedError("User account not found.")
+
             deleted_count = await self._repository.delete_item(
                 session,
                 item_id=item_id,
@@ -71,7 +110,7 @@ class SavedListService:
                 await session.rollback()
                 raise NotFoundError("Item not found!")
             await session.commit()
-        except NotFoundError:
+        except AppError:
             raise
         except Exception:
             await session.rollback()
@@ -90,18 +129,21 @@ class SavedListService:
             raise AppError("Invalid Input!", status_code=400)
 
         try:
+            user_exists = await self._repository.lock_user_for_update(session, user_id)
+            if not user_exists:
+                await session.rollback()
+                raise UnauthorizedError("User account not found.")
+
             owned_ids = await self._repository.get_owned_ids_for_update(session, user_id)
             if set(ordered_list) != owned_ids:
                 await session.rollback()
                 raise AppError("Invalid Input!", status_code=400)
 
-            for index, item_id in enumerate(ordered_list):
-                await self._repository.update_sort_order(
-                    session,
-                    item_id=item_id,
-                    user_id=user_id,
-                    sort_order=index + 1,
-                )
+            await self._repository.bulk_update_sort_orders(
+                session,
+                user_id=user_id,
+                ordered_list=ordered_list,
+            )
             await session.commit()
         except AppError:
             raise

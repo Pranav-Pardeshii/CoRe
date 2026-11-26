@@ -22,7 +22,7 @@ class ConflictError(AppError):
     """Raised when an operation conflicts with existing state or uniqueness constraints."""
 
     def __init__(self, detail: str) -> None:
-        super().__init__(detail=detail, status_code=status.HTTP_400_BAD_REQUEST)
+        super().__init__(detail=detail, status_code=status.HTTP_409_CONFLICT)
 
 
 class NotFoundError(AppError):
@@ -48,7 +48,7 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(SQLAlchemyError)
     async def handle_sqlalchemy_error(_request: Request, exc: SQLAlchemyError) -> JSONResponse:
-        logger.error(
+        logger.exception(
             "Database error type=%s request_id=%s",
             exc.__class__.__name__,
             get_request_id(),
@@ -56,4 +56,16 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"detail": "A database error occurred."},
+        )
+
+    @app.exception_handler(Exception)
+    async def handle_unexpected_error(_request: Request, exc: Exception) -> JSONResponse:
+        logger.exception(
+            "Unhandled error type=%s request_id=%s",
+            exc.__class__.__name__,
+            get_request_id(),
+        )
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"detail": "Internal server error."},
         )

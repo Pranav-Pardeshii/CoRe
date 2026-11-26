@@ -20,6 +20,7 @@ class TrendsService:
             session,
             branch_code=trend_query.branch_code,
             category=category,
+            level=trend_query.level,
         )
         return TrendsResponse(
             branch_code=trend_query.branch_code,

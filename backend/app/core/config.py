@@ -3,7 +3,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import AliasChoices, Field, field_validator
+from fastapi import Request
+from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import URL
 
@@ -37,8 +38,20 @@ class Settings(BaseSettings):
         default_factory=list,
         validation_alias=AliasChoices("CORE_TRUSTED_PROXY_IPS", "TRUSTED_PROXY_IPS"),
     )
+    TRUSTED_PROXY_HOPS: int = Field(
+        default=0,
+        ge=0,
+        validation_alias=AliasChoices("CORE_TRUSTED_PROXY_HOPS", "TRUSTED_PROXY_HOPS"),
+    )
 
-    DB_HOST: str = Field(validation_alias=AliasChoices("CORE_DB_HOST", "DB_HOST"))
+    DB_HOST: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("CORE_DB_HOST", "DB_HOST"),
+    )
+    DB_UNIX_SOCKET: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("CORE_DB_UNIX_SOCKET", "DB_UNIX_SOCKET"),
+    )
     DB_USER: str = Field(validation_alias=AliasChoices("CORE_DB_USER", "DB_USER"))
     DB_PORT: int = Field(default=3306, validation_alias=AliasChoices("CORE_DB_PORT", "DB_PORT"))
     DB_PASS: str = Field(validation_alias=AliasChoices("CORE_DB_PASS", "DB_PASS"))
@@ -50,23 +63,44 @@ class Settings(BaseSettings):
 
     SECRET_KEY: str = Field(validation_alias=AliasChoices("CORE_SECRET_KEY", "SECRET_KEY"))
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(
+        default=60,
+        ge=1,
+        validation_alias=AliasChoices(
+            "CORE_ACCESS_TOKEN_EXPIRE_MINUTES",
+            "ACCESS_TOKEN_EXPIRE_MINUTES",
+        ),
+    )
 
     DB_POOL_SIZE: int = Field(
-        default=5,
+        default=2,
+        ge=1,
         validation_alias=AliasChoices("CORE_DB_POOL_SIZE", "DB_POOL_SIZE"),
     )
     DB_MAX_OVERFLOW: int = Field(
-        default=10,
+        default=3,
+        ge=0,
         validation_alias=AliasChoices("CORE_DB_MAX_OVERFLOW", "DB_MAX_OVERFLOW"),
+    )
+    DB_POOL_TIMEOUT: int = Field(
+        default=5,
+        ge=1,
+        validation_alias=AliasChoices("CORE_DB_POOL_TIMEOUT", "DB_POOL_TIMEOUT"),
+    )
+    DB_CONNECT_TIMEOUT: int = Field(
+        default=5,
+        ge=1,
+        validation_alias=AliasChoices("CORE_DB_CONNECT_TIMEOUT", "DB_CONNECT_TIMEOUT"),
     )
     DB_POOL_RECYCLE: int = Field(
         default=1800,
+        ge=60,
         validation_alias=AliasChoices("CORE_DB_POOL_RECYCLE", "DB_POOL_RECYCLE"),
     )
 
     AUTH_RATE_LIMIT_MAX_REQUESTS: int = Field(
         default=20,
+        ge=1,
         validation_alias=AliasChoices(
             "CORE_AUTH_RATE_LIMIT_MAX_REQUESTS",
             "AUTH_RATE_LIMIT_MAX_REQUESTS",
@@ -74,10 +108,40 @@ class Settings(BaseSettings):
     )
     AUTH_RATE_LIMIT_WINDOW_SECONDS: int = Field(
         default=60,
+        ge=1,
         validation_alias=AliasChoices(
             "CORE_AUTH_RATE_LIMIT_WINDOW_SECONDS",
             "AUTH_RATE_LIMIT_WINDOW_SECONDS",
         ),
+    )
+    AUTH_LOGIN_USERNAME_MAX_ATTEMPTS: int = Field(
+        default=10,
+        ge=1,
+        validation_alias=AliasChoices(
+            "CORE_AUTH_LOGIN_USERNAME_MAX_ATTEMPTS",
+            "AUTH_LOGIN_USERNAME_MAX_ATTEMPTS",
+        ),
+    )
+    PUBLIC_RATE_LIMIT_MAX_REQUESTS: int = Field(
+        default=60,
+        ge=1,
+        validation_alias=AliasChoices(
+            "CORE_PUBLIC_RATE_LIMIT_MAX_REQUESTS",
+            "PUBLIC_RATE_LIMIT_MAX_REQUESTS",
+        ),
+    )
+    PUBLIC_RATE_LIMIT_WINDOW_SECONDS: int = Field(
+        default=60,
+        ge=1,
+        validation_alias=AliasChoices(
+            "CORE_PUBLIC_RATE_LIMIT_WINDOW_SECONDS",
+            "PUBLIC_RATE_LIMIT_WINDOW_SECONDS",
+        ),
+    )
+
+    RECOMMENDER_YEARS: list[int] | None = Field(
+        default=None,
+        validation_alias=AliasChoices("CORE_RECOMMENDER_YEARS", "RECOMMENDER_YEARS"),
     )
 
     @field_validator("SECRET_KEY")
@@ -88,22 +152,39 @@ class Settings(BaseSettings):
             raise ValueError("SECRET_KEY must be set and non-empty.")
         return value
 
-    @field_validator("DB_HOST", "DB_USER", "DB_NAME")
+    @field_validator("DB_USER", "DB_NAME")
     @classmethod
     def validate_non_empty_db_field(cls, value: str) -> str:
         if not value or not value.strip():
             raise ValueError("Database configuration fields must be non-empty.")
         return value
 
+    @model_validator(mode="after")
+    def validate_production_and_db_transport(self) -> "Settings":
+        """Validate DB transport and production security constraints."""
+        has_host = bool(self.DB_HOST and self.DB_HOST.strip())
+        has_socket = bool(self.DB_UNIX_SOCKET and self.DB_UNIX_SOCKET.strip())
+        if not has_host and not has_socket:
+            raise ValueError("Either DB_HOST or DB_UNIX_SOCKET must be set.")
+
+        if self.ENVIRONMENT == "production":
+            if len(self.SECRET_KEY.strip()) < 32:
+                raise ValueError("SECRET_KEY must be at least 32 characters in production.")
+            if "*" in self.CORS_ORIGINS:
+                raise ValueError("CORS_ORIGINS must not contain '*' in production.")
+
+        return self
+
     @property
     def async_database_url(self) -> URL:
         """Build a safe SQLAlchemy asyncmy URL without manual string concatenation."""
+        use_socket = bool(self.DB_UNIX_SOCKET and self.DB_UNIX_SOCKET.strip())
         return URL.create(
             drivername="mysql+asyncmy",
             username=self.DB_USER,
             password=self.DB_PASS,
-            host=self.DB_HOST,
-            port=self.DB_PORT,
+            host=None if use_socket else self.DB_HOST,
+            port=None if use_socket else self.DB_PORT,
             database=self.DB_NAME,
         )
 
@@ -112,7 +193,7 @@ class Settings(BaseSettings):
         if not self.DB_SSL_CA or not self.DB_SSL_CA.strip():
             return None
         candidate = Path(self.DB_SSL_CA)
-        if candidate.is_absolute() or candidate.exists():
+        if candidate.is_absolute():
             return candidate
         repo_relative = _REPO_ROOT / candidate
         if repo_relative.exists():
@@ -120,6 +201,8 @@ class Settings(BaseSettings):
         backend_relative = _REPO_ROOT / "backend" / candidate
         if backend_relative.exists():
             return backend_relative
+        if candidate.exists():
+            return candidate
         return candidate
 
     def build_ssl_context(self) -> ssl.SSLContext | None:
@@ -136,3 +219,8 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Return cached application settings."""
     return Settings()  # type: ignore[call-arg]
+
+
+def get_app_settings(request: Request) -> Settings:
+    """Return the Settings instance bound to the active FastAPI application state."""
+    return request.app.state.settings

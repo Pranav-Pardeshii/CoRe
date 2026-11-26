@@ -2,8 +2,12 @@ from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.core.config import Settings, get_settings
-from backend.app.core.rate_limit import enforce_auth_rate_limit
+from backend.app.core.config import Settings, get_app_settings
+from backend.app.core.rate_limit import (
+    InMemoryRateLimiter,
+    enforce_auth_rate_limit,
+    get_auth_rate_limiter,
+)
 from backend.app.infrastructure.database.session import get_db_session
 from backend.app.modules.auth.schemas import (
     RegisterResponse,
@@ -40,11 +44,13 @@ async def register(
 async def login(
     credentials: OAuth2PasswordRequestForm = Depends(),
     session: AsyncSession = Depends(get_db_session),
-    settings: Settings = Depends(get_settings),
+    settings: Settings = Depends(get_app_settings),
+    limiter: InMemoryRateLimiter = Depends(get_auth_rate_limiter),
 ) -> TokenResponse:
     return await _auth_service.login(
         session,
         username=credentials.username,
         password=credentials.password,
         settings=settings,
+        limiter=limiter,
     )

@@ -1,14 +1,14 @@
 from unittest.mock import AsyncMock
 
 import pytest
-from backend.app.core.config import Settings, get_settings
-from backend.app.core.exceptions import AppError, ConflictError, NotFoundError
+from backend.app.core.config import Settings
+from backend.app.core.exceptions import AppError, ConflictError, NotFoundError, UnauthorizedError
 from backend.app.core.security import create_access_token
 from backend.app.infrastructure.database.session import get_db_session
 from backend.app.main import create_app
 from backend.app.modules.catalog.repository import BranchCollegeInfo
 from backend.app.modules.saved_lists.schemas import SavedListReorderRequest
-from backend.app.modules.saved_lists.service import SavedListService
+from backend.app.modules.saved_lists.service import MAX_SAVED_LIST_ITEMS, SavedListService
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
@@ -27,12 +27,14 @@ async def test_saved_list_create_allocates_rank_and_handles_duplicates() -> None
         college_name="COEP",
         branch_name="Computer Engineering",
     )
-    repo.get_max_sort_order_for_update.return_value = 2
+    repo.lock_user_for_update.return_value = True
+    repo.get_count_and_max_sort_order.return_value = (2, 2)
     session = AsyncMock()
     service = SavedListService(repository=repo, catalog_repository=catalog_repo)
 
     res = await service.create_item(session, user_id=5, branch_code="0627124510")
     assert res.message == "Item saved successfully."
+    repo.lock_user_for_update.assert_awaited_once_with(session, 5)
     repo.create_item.assert_awaited_once_with(
         session,
         user_id=5,
@@ -44,16 +46,39 @@ async def test_saved_list_create_allocates_rank_and_handles_duplicates() -> None
     )
     session.commit.assert_awaited_once()
 
-    # Duplicate save -> ConflictError + rollback
+    # Duplicate save -> ConflictError (409) + rollback
     session.reset_mock()
-    repo.create_item.side_effect = IntegrityError("INSERT", {}, Exception("Duplicate"))
-    with pytest.raises(ConflictError):
+    repo.create_item.side_effect = IntegrityError("INSERT", {}, Exception("Duplicate entry"))
+    with pytest.raises(ConflictError) as exc_info:
         await service.create_item(session, user_id=5, branch_code="0627124510")
+    assert exc_info.value.status_code == 409
     session.rollback.assert_awaited_once()
+
+
+async def test_saved_list_enforces_max_items_and_user_existence() -> None:
+    repo = AsyncMock()
+    catalog_repo = AsyncMock()
+    catalog_repo.get_branch_with_college.return_value = BranchCollegeInfo(
+        college_code="06271",
+        college_name="COEP",
+        branch_name="Computer Engineering",
+    )
+    session = AsyncMock()
+    service = SavedListService(repository=repo, catalog_repository=catalog_repo)
+
+    repo.lock_user_for_update.return_value = False
+    with pytest.raises(UnauthorizedError):
+        await service.create_item(session, user_id=5, branch_code="0627124510")
+
+    repo.lock_user_for_update.return_value = True
+    repo.get_count_and_max_sort_order.return_value = (MAX_SAVED_LIST_ITEMS, MAX_SAVED_LIST_ITEMS)
+    with pytest.raises(AppError, match="limit"):
+        await service.create_item(session, user_id=5, branch_code="0627124510")
 
 
 async def test_saved_list_delete_enforces_ownership() -> None:
     repo = AsyncMock()
+    repo.lock_user_for_update.return_value = True
     repo.delete_item.return_value = 0
     session = AsyncMock()
     service = SavedListService(repository=repo)
@@ -64,8 +89,9 @@ async def test_saved_list_delete_enforces_ownership() -> None:
     session.commit.assert_not_awaited()
 
 
-async def test_saved_list_reorder_validates_exact_membership_and_uniqueness() -> None:
+async def test_saved_list_reorder_uses_bulk_update_and_validates_membership() -> None:
     repo = AsyncMock()
+    repo.lock_user_for_update.return_value = True
     repo.get_owned_ids_for_update.return_value = {1, 2}
     session = AsyncMock()
     service = SavedListService(repository=repo)
@@ -79,11 +105,15 @@ async def test_saved_list_reorder_validates_exact_membership_and_uniqueness() ->
         await service.reorder(session, user_id=5, ordered_list=[1, 3])
     session.rollback.assert_awaited()
 
-    # Exact permutation succeeds
+    # Exact permutation succeeds with a single bulk update
     session.reset_mock()
     res = await service.reorder(session, user_id=5, ordered_list=[2, 1])
     assert res.message == "Bingo! list reordered successfully!"
-    assert repo.update_sort_order.await_count == 2
+    repo.bulk_update_sort_orders.assert_awaited_once_with(
+        session,
+        user_id=5,
+        ordered_list=[2, 1],
+    )
     session.commit.assert_awaited_once()
 
 
@@ -98,7 +128,6 @@ def test_saved_list_endpoints_require_auth(test_settings: Settings) -> None:
         yield mock_session
 
     app.dependency_overrides[get_db_session] = override_db
-    app.dependency_overrides[get_settings] = lambda: test_settings
 
     with TestClient(app) as client:
         assert client.get("/saved-lists/").status_code == 401
@@ -114,3 +143,4 @@ def test_saved_list_endpoints_require_auth(test_settings: Settings) -> None:
             headers={"Authorization": f"Bearer {token}"},
         )
         assert resp.status_code == 422
+        assert resp.headers.get("Cache-Control") == "no-store"

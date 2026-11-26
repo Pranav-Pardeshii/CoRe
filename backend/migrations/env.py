@@ -25,6 +25,8 @@ def _get_url_and_connect_args() -> tuple[str, dict[str, Any]]:
 
     settings = get_settings()
     connect_args: dict[str, Any] = {}
+    if settings.DB_UNIX_SOCKET:
+        connect_args["unix_socket"] = settings.DB_UNIX_SOCKET
     ssl_context = settings.build_ssl_context()
     if ssl_context is not None:
         connect_args["ssl"] = ssl_context
@@ -39,6 +41,8 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        compare_type=True,
+        compare_server_default=True,
     )
 
     with context.begin_transaction():
@@ -46,7 +50,12 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        compare_type=True,
+        compare_server_default=True,
+    )
 
     with context.begin_transaction():
         context.run_migrations()
