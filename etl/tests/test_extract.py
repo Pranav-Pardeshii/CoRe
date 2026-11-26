@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 from pathlib import Path
+from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -13,6 +15,7 @@ from etl.extract import (
     extract_pdf_to_csv,
     normalize_name,
     parse_pages,
+    resolve_pdftotext_cmd,
 )
 
 
@@ -91,12 +94,39 @@ def test_single_pass_pdftotext_splits_on_form_feed(
     pages = extract_pages_from_pdf(pdf_path)
     assert pages == [["Page 1 line"], ["Page 2 line"]]
     mock_run.assert_called_once_with(
-        ["pdftotext", "-layout", str(pdf_path), "-"],
+        ["pdftotext", "-layout", "-enc", "UTF-8", str(pdf_path), "-"],
         capture_output=True,
         text=True,
         encoding="utf-8",
+        errors="replace",
         check=True,
     )
+
+
+def test_extract_pages_handles_non_utf8_bytes_from_pdftotext(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """extract_pages_from_pdf replaces stray non-UTF-8 bytes instead of crashing reader thread."""
+    pdf_path = tmp_path / "2026_CAP1.pdf"
+    pdf_path.write_bytes(b"%PDF-1.4")
+
+    real_run = subprocess.run
+
+    def fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
+        assert cmd[0] == "pdftotext"
+        return real_run(
+            [
+                sys.executable,
+                "-c",
+                "import sys; sys.stdout.buffer.write(b'Page 1 \\xb2\\x0cPage 2\\x0c')",
+            ],
+            **kwargs,
+        )
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+
+    pages = extract_pages_from_pdf(pdf_path)
+    assert pages == [["Page 1 \ufffd"], ["Page 2"]]
 
 
 def test_extract_pages_raises_clear_runtime_error_when_pdftotext_missing(
@@ -176,3 +206,60 @@ def test_parse_pages_pads_4_digit_college_and_9_digit_branch_codes() -> None:
     assert len(rows) == 1
     assert rows[0]["college_code"] == "01002"
     assert rows[0]["branch_code"] == "0100219110"
+
+
+def test_resolve_pdftotext_cmd_prefers_poppler_over_xpdf(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """resolve_pdftotext_cmd skips Xpdf (Git for Windows) and selects Poppler."""
+    monkeypatch.setattr(
+        "etl.extract._find_path_executables",
+        lambda _name: [
+            r"C:\Program Files\Git\mingw64\bin\pdftotext.exe",
+            r"C:\poppler\Library\bin\pdftotext.exe",
+        ],
+    )
+
+    def fake_run(cmd: list[str], **_kwargs: Any) -> subprocess.CompletedProcess[str]:
+        if "Git" in cmd[0]:
+            return subprocess.CompletedProcess(
+                args=cmd,
+                returncode=0,
+                stdout="",
+                stderr="pdftotext version 4.00\nCopyright 1996-2017 Glyph & Cog, LLC",
+            )
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="",
+            stderr="pdftotext version 26.09.0\nCopyright 2005-2026 The Poppler Developers",
+        )
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    assert resolve_pdftotext_cmd() == r"C:\poppler\Library\bin\pdftotext.exe"
+
+
+def test_resolve_pdftotext_cmd_rejects_xpdf_only_and_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """resolve_pdftotext_cmd fails loudly when Poppler is missing or shadowed by Xpdf."""
+    monkeypatch.setattr("etl.extract._find_path_executables", lambda _name: [])
+    with pytest.raises(RuntimeError, match="pdftotext binary not found"):
+        resolve_pdftotext_cmd()
+
+    monkeypatch.setattr(
+        "etl.extract._find_path_executables",
+        lambda _name: [r"C:\Program Files\Git\mingw64\bin\pdftotext.exe"],
+    )
+    monkeypatch.setattr(
+        subprocess,
+        "run",
+        lambda cmd, **_kw: subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="",
+            stderr="pdftotext version 4.00\nCopyright 1996-2017 Glyph & Cog, LLC",
+        ),
+    )
+    with pytest.raises(RuntimeError, match="non-Poppler pdftotext"):
+        resolve_pdftotext_cmd()

@@ -5,7 +5,9 @@ from __future__ import annotations
 import csv
 import json
 import logging
+import os
 import re
+import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -84,14 +86,60 @@ def normalize_name(text: str) -> str:
     return normalized
 
 
-def extract_pages_from_pdf(pdf_path: Path) -> list[list[str]]:
-    """Run ``pdftotext -layout`` once and split output on form-feed characters."""
-    try:
+def _find_path_executables(name: str) -> list[str]:
+    """Return all matching executables for *name* in PATH order (deduplicated)."""
+    seen: set[str] = set()
+    matches: list[str] = []
+    for entry in os.get_exec_path():
+        if not entry:
+            continue
+        found = shutil.which(name, path=entry)
+        if found:
+            resolved = str(Path(found).resolve())
+            if resolved not in seen:
+                seen.add(resolved)
+                matches.append(found)
+    return matches
+
+
+def resolve_pdftotext_cmd() -> str:
+    """Resolve a Poppler ``pdftotext`` binary on PATH, rejecting Xpdf builds."""
+    candidates = _find_path_executables("pdftotext")
+    if not candidates:
+        raise RuntimeError(
+            "pdftotext binary not found. Install Poppler and ensure 'pdftotext' is on PATH."
+        )
+
+    for candidate in candidates:
         result = subprocess.run(
-            ["pdftotext", "-layout", str(pdf_path), "-"],
+            [candidate, "-v"],
             capture_output=True,
             text=True,
             encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+        version_text = f"{result.stdout or ''}\n{result.stderr or ''}"
+        if "poppler" in version_text.lower():
+            return candidate
+
+    raise RuntimeError(
+        "Found non-Poppler pdftotext "
+        f"({', '.join(candidates)}), which misaligns MHT-CET cutoff PDFs. "
+        "Install Poppler and ensure Poppler's 'pdftotext' precedes it on PATH "
+        "(restart your terminal if recently installed)."
+    )
+
+
+def extract_pages_from_pdf(pdf_path: Path, pdftotext_cmd: str = "pdftotext") -> list[list[str]]:
+    """Run ``pdftotext -layout -enc UTF-8`` once and split output on form-feed characters."""
+    try:
+        result = subprocess.run(
+            [pdftotext_cmd, "-layout", "-enc", "UTF-8", str(pdf_path), "-"],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
             check=True,
         )
     except FileNotFoundError as exc:
@@ -398,11 +446,19 @@ def discover_pdfs(
     return sorted(sources, key=lambda item: (item.year, item.round, item.path.name))
 
 
-def extract_pdf_to_csv(source: PdfSource, output_dir: Path) -> Path:
+def extract_pdf_to_csv(
+    source: PdfSource,
+    output_dir: Path,
+    pdftotext_cmd: str | None = None,
+) -> Path:
     """Extract a single PDF into ``<output_dir>/cutoff_<year>_r<round>.csv``."""
     output_dir.mkdir(parents=True, exist_ok=True)
     output_csv = output_dir / f"cutoff_{source.year}_r{source.round}.csv"
-    pages = extract_pages_from_pdf(source.path)
+    pages = (
+        extract_pages_from_pdf(source.path)
+        if pdftotext_cmd is None
+        else extract_pages_from_pdf(source.path, pdftotext_cmd=pdftotext_cmd)
+    )
     rows = parse_pages(pages, year=source.year, round_num=source.round)
 
     with output_csv.open("w", newline="", encoding="utf-8") as handle:
@@ -426,8 +482,9 @@ def extract_all(pdf_dir: Path, output_dir: Path) -> list[Path]:
     if not sources:
         raise FileNotFoundError(f"No matching cutoff PDFs found in {pdf_dir}")
 
+    pdftotext_cmd = resolve_pdftotext_cmd()
     output_dir.mkdir(parents=True, exist_ok=True)
     outputs: list[Path] = []
     for source in sources:
-        outputs.append(extract_pdf_to_csv(source, output_dir))
+        outputs.append(extract_pdf_to_csv(source, output_dir, pdftotext_cmd=pdftotext_cmd))
     return outputs
