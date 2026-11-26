@@ -1,30 +1,33 @@
 [project]
 name = "core"
 version = "0.1.0"
-description = "Add your description here"
+description = "MHT-CET College Recommendation & Analytics Platform"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.20.1",
     "asyncmy>=0.2.18",
-    "bcrypt==4.0.1",
     "fastapi>=0.139.0",
-    "mysql-connector-python>=9.7.0",
-    "pandas>=3.0.3",
-    "passlib[bcrypt]==1.7.4",
+    "pwdlib[argon2]>=0.2.1",
     "pydantic>=2.13.4",
     "pydantic-settings>=2.16.3",
-    "python-dotenv>=1.2.2",
-    "python-jose>=3.5.0",
+    "pyjwt[crypto]>=2.10.1",
     "python-multipart>=0.0.32",
-    "requests>=2.34.2",
     "sqlalchemy[asyncio]>=2.1.9",
-    "streamlit>=1.59.1",
-    "streamlit-cookies-manager>=0.2.0",
-    "uvicorn>=0.51.0",
+    "uvicorn[standard]>=0.51.0",
 ]
 
 [dependency-groups]
+etl = [
+    "mysql-connector-python>=9.7.0",
+    "python-dotenv>=1.2.2",
+]
+frontend = [
+    "altair>=5.0.0",
+    "pandas>=3.0.3",
+    "requests>=2.34.2",
+    "streamlit>=1.59.1",
+]
 dev = [
     "httpx>=0.28.1",
     "pyright>=1.1.414",
@@ -35,7 +38,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["backend/tests", "etl/tests"]
+testpaths = ["backend/tests", "etl/tests", "frontend/tests"]
 pythonpath = ["."]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
@@ -46,7 +49,7 @@ markers = [
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-src = ["backend", "etl"]
+src = ["backend", "etl", "frontend"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
@@ -54,5 +57,5 @@ ignore = ["B008"]
 
 [tool.pyright]
 pythonVersion = "3.12"
-include = ["backend/app", "backend/tests", "etl"]
+include = ["backend/app", "backend/tests", "etl", "frontend"]
 typeCheckingMode = "standard"
