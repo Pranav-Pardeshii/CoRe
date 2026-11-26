@@ -57,7 +57,7 @@ def _do_register(username: str, password: str) -> None:
         st.error(result.error or "Registration failed.")
         return
 
-    st.success("Account created. Log in below.")
+    st.session_state["auth_notice"] = "Account created. Log in below."
     st.session_state["auth_mode"] = "login"
     st.rerun()
 
@@ -73,6 +73,9 @@ def render_auth_sidebar() -> None:
         expired_notice = st.session_state.pop("session_expired_notice", None)
         if expired_notice:
             st.warning(expired_notice)
+        auth_notice = st.session_state.pop("auth_notice", None)
+        if auth_notice:
+            st.success(auth_notice)
 
         if is_logged_in():
             st.markdown(f"Logged in as **{get_username()}**")

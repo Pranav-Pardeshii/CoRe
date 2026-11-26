@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from dataclasses import dataclass
 from typing import Any
 
@@ -11,7 +12,16 @@ import requests
 import streamlit as st
 
 DEFAULT_TIMEOUT: tuple[float, float] = (5.0, 15.0)
-_SESSION = requests.Session()
+_thread_local = threading.local()
+
+
+def _get_session() -> requests.Session:
+    """Return a thread-local requests.Session so concurrent Streamlit threads never collide."""
+    session = getattr(_thread_local, "session", None)
+    if session is None:
+        session = requests.Session()
+        _thread_local.session = session
+    return session
 
 
 def get_api_base_url() -> str:
@@ -79,7 +89,7 @@ def request_api(
         headers["Authorization"] = f"Bearer {token}"
 
     try:
-        response = _SESSION.request(
+        response = _get_session().request(
             method=method,
             url=url,
             params=params,

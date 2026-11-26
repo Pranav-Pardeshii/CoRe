@@ -1,7 +1,9 @@
-"""Unit tests for frontend.category_labels and frontend.api_client."""
+"""Unit tests for frontend.category_labels, frontend.api_client, and frontend.ui."""
 
 from __future__ import annotations
 
+import threading
+from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -9,6 +11,7 @@ import pytest
 import requests
 from frontend import api_client
 from frontend.category_labels import decode_category
+from frontend.ui import load_catalog_filters
 
 
 @pytest.mark.parametrize(
@@ -55,13 +58,30 @@ def test_api_base_url_strips_trailing_slash(monkeypatch: pytest.MonkeyPatch) -> 
     assert api_client.get_api_base_url() == "https://api.example.com"
 
 
+def test_api_client_uses_thread_local_sessions() -> None:
+    """_get_session returns distinct requests.Session objects per thread."""
+    sessions: list[requests.Session] = []
+
+    def worker() -> None:
+        sessions.append(api_client._get_session())
+
+    t1 = threading.Thread(target=worker)
+    t2 = threading.Thread(target=worker)
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
+
+    assert len(sessions) == 2
+    assert sessions[0] is not sessions[1]
+
+
 def test_api_client_handles_request_exception(monkeypatch: pytest.MonkeyPatch) -> None:
     """Network errors return a clean ApiResult without raising."""
-
-    def raise_conn_error(*_args: Any, **_kwargs: Any) -> None:
-        raise requests.ConnectionError("connection refused")
-
-    monkeypatch.setattr(api_client._SESSION, "request", raise_conn_error)
+    fake_session = SimpleNamespace(
+        request=MagicMock(side_effect=requests.ConnectionError("connection refused"))
+    )
+    monkeypatch.setattr(api_client, "_get_session", lambda: fake_session)
     res = api_client.fetch_catalog_filters()
     assert not res.ok
     assert res.status_code == 0
@@ -75,7 +95,8 @@ def test_api_client_handles_non_json_502_gracefully(monkeypatch: pytest.MonkeyPa
         text="<html><body>502 Bad Gateway</body></html>",
         content_type="text/html",
     )
-    monkeypatch.setattr(api_client._SESSION, "request", lambda **_kw: bad_gateway)
+    fake_session = SimpleNamespace(request=lambda **_kw: bad_gateway)
+    monkeypatch.setattr(api_client, "_get_session", lambda: fake_session)
 
     res = api_client.fetch_recommendations({"percentile": 90})
     assert not res.ok
@@ -89,14 +110,18 @@ def test_api_client_extracts_422_and_409_details(monkeypatch: pytest.MonkeyPatch
         422,
         json_data={"detail": [{"msg": "String should have at least 8 characters"}]},
     )
-    monkeypatch.setattr(api_client._SESSION, "request", lambda **_kw: resp_422)
+    monkeypatch.setattr(
+        api_client, "_get_session", lambda: SimpleNamespace(request=lambda **_kw: resp_422)
+    )
     res = api_client.register_user("alice", "short")
     assert not res.ok
     assert res.status_code == 422
     assert "at least 8 characters" in (res.error or "")
 
     resp_409 = _mock_response(409, json_data={"detail": "Username already exists."})
-    monkeypatch.setattr(api_client._SESSION, "request", lambda **_kw: resp_409)
+    monkeypatch.setattr(
+        api_client, "_get_session", lambda: SimpleNamespace(request=lambda **_kw: resp_409)
+    )
     res_dup = api_client.register_user("alice", "password123")
     assert not res_dup.ok
     assert res_dup.status_code == 409
@@ -120,7 +145,9 @@ def test_api_client_401_clears_session_and_reruns(monkeypatch: pytest.MonkeyPatc
     )
 
     resp_401 = _mock_response(401, json_data={"detail": "Invalid or expired token"})
-    monkeypatch.setattr(api_client._SESSION, "request", lambda **_kw: resp_401)
+    monkeypatch.setattr(
+        api_client, "_get_session", lambda: SimpleNamespace(request=lambda **_kw: resp_401)
+    )
 
     res = api_client.get_saved_list("stale-jwt")
     assert not res.ok
@@ -141,7 +168,7 @@ def test_api_client_uses_exact_routes_and_timeouts(monkeypatch: pytest.MonkeyPat
         return _mock_response(200, json_data={"ok": True})
 
     monkeypatch.setenv("CORE_API_BASE_URL", "http://127.0.0.1:8000")
-    monkeypatch.setattr(api_client._SESSION, "request", fake_request)
+    monkeypatch.setattr(api_client, "_get_session", lambda: SimpleNamespace(request=fake_request))
 
     api_client.fetch_catalog_filters()
     api_client.fetch_recommendations({"percentile": 95})
@@ -155,3 +182,30 @@ def test_api_client_uses_exact_routes_and_timeouts(monkeypatch: pytest.MonkeyPat
         "http://127.0.0.1:8000/saved-lists/",
     ]
     assert all(c["timeout"] == (5.0, 15.0) for c in captured)
+
+
+def test_load_catalog_filters_raises_on_api_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    """load_catalog_filters raises RuntimeError on failure so cache_data never caches outages."""
+    load_catalog_filters.clear()
+    monkeypatch.setattr(
+        "frontend.ui.fetch_catalog_filters",
+        lambda: api_client.ApiResult(ok=False, status_code=503, error="Backend unavailable"),
+    )
+    with pytest.raises(RuntimeError, match="Backend unavailable"):
+        load_catalog_filters()
+
+    # Subsequent healthy call succeeds because the error was not cached
+    monkeypatch.setattr(
+        "frontend.ui.fetch_catalog_filters",
+        lambda: api_client.ApiResult(
+            ok=True,
+            status_code=200,
+            data={"categories": ["GOPENS"], "branches": [], "divisions": []},
+        ),
+    )
+    assert load_catalog_filters() == {
+        "categories": ["GOPENS"],
+        "branches": [],
+        "divisions": [],
+    }
+    load_catalog_filters.clear()
