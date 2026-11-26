@@ -1,70 +1,77 @@
-import requests
+"""Saved list sidebar UI for CoRe."""
+
+from __future__ import annotations
+
+from typing import Any
+
 import streamlit as st
-from auth_ui import get_token, is_logged_in
 
-API_URL_SAVED_LIST = "https://core-5y5r.onrender.com/saved-lists/"
-
-
-def _auth_headers():
-    return {"Authorization": f"Bearer {get_token()}"}
-
-
-def save_college(branch_code: str):
-    """POST /saved-lists/ — save a single branch_code for the logged-in user."""
-    response = requests.post(
-        API_URL_SAVED_LIST,
-        json={"branch_code": branch_code},
-        headers=_auth_headers(),
-        timeout=15,
-    )
-    data = response.json()
-    if response.status_code != 200:
-        st.toast(data.get("detail", "Couldn't save."), icon="⚠️")
-    else:
-        st.toast("Saved to your list.", icon="✅")
-        # force the sidebar list to refetch next render
-        st.session_state.pop("saved_list_cache", None)
-        st.rerun()
+from frontend.api_client import (
+    add_saved_list_item,
+    delete_saved_list_item,
+    get_saved_list,
+    reorder_saved_list,
+)
+from frontend.auth_ui import get_token, is_logged_in
 
 
-def _fetch_saved_list():
-    response = requests.get(API_URL_SAVED_LIST, headers=_auth_headers(), timeout=15)
-    data = response.json()
-    if response.status_code != 200:
-        st.error(data.get("detail", "Couldn't load saved list."))
+def save_college(branch_code: str) -> None:
+    """Save a branch_code to the logged-in user's preference list."""
+    token = get_token()
+    if not token:
+        st.toast("Please log in to save colleges.", icon="⚠️")
+        return
+
+    result = add_saved_list_item(token, branch_code)
+    if not result.ok:
+        st.toast(result.error or "Couldn't save.", icon="⚠️")
+        return
+
+    st.toast("Saved to your list.", icon="✅")
+    st.session_state.pop("saved_list_cache", None)
+    st.rerun()
+
+
+def _fetch_saved_list() -> list[dict[str, Any]]:
+    token = get_token()
+    if not token:
         return []
-    return data["saved_list"]
+
+    result = get_saved_list(token)
+    if not result.ok:
+        st.error(result.error or "Couldn't load saved list.")
+        return []
+    return list(result.data.get("saved_list", []))
 
 
-def _delete_item(item_id: int):
-    response = requests.delete(
-        f"{API_URL_SAVED_LIST}{item_id}", headers=_auth_headers(), timeout=15
-    )
-    data = response.json()
-    if response.status_code != 200:
-        st.error(data.get("detail", "Couldn't delete item."))
+def _delete_item(item_id: int) -> None:
+    token = get_token()
+    if not token:
+        return
+
+    result = delete_saved_list_item(token, item_id)
+    if not result.ok:
+        st.error(result.error or "Couldn't delete item.")
         return
     st.session_state.pop("saved_list_cache", None)
     st.rerun()
 
 
-def _reorder(ordered_ids: list[int]):
-    response = requests.put(
-        API_URL_SAVED_LIST,
-        json={"ordered_list": ordered_ids},
-        headers=_auth_headers(),
-        timeout=15,
-    )
-    data = response.json()
-    if response.status_code != 200:
-        st.error(data.get("detail", "Couldn't reorder."))
+def _reorder(ordered_ids: list[int]) -> None:
+    token = get_token()
+    if not token:
+        return
+
+    result = reorder_saved_list(token, ordered_ids)
+    if not result.ok:
+        st.error(result.error or "Couldn't reorder.")
         return
     st.session_state.pop("saved_list_cache", None)
     st.rerun()
 
 
-def render_saved_list_sidebar():
-    """Call after render_auth_sidebar(). Only shows anything if logged in."""
+def render_saved_list_sidebar() -> None:
+    """Render the logged-in user's saved list in the sidebar."""
     if not is_logged_in():
         return
 
@@ -76,12 +83,11 @@ def render_saved_list_sidebar():
             st.session_state["saved_list_cache"] = _fetch_saved_list()
 
         items = st.session_state["saved_list_cache"]
-
         if not items:
             st.caption("Nothing saved yet.")
             return
 
-        ids_in_order = [item["id"] for item in items]
+        ids_in_order = [int(item["id"]) for item in items]
 
         for idx, item in enumerate(items):
             col_text, col_up, col_down, col_del = st.columns([5, 1, 1, 1])
@@ -99,4 +105,4 @@ def render_saved_list_sidebar():
                     _reorder(new_order)
             with col_del:
                 if st.button("✕", key=f"del_{item['id']}"):
-                    _delete_item(item["id"])
+                    _delete_item(int(item["id"]))

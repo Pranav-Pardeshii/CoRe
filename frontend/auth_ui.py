@@ -1,49 +1,60 @@
-import requests
+"""Authentication sidebar UI for CoRe."""
+
+from __future__ import annotations
+
 import streamlit as st
 
-API_URL_AUTH = "https://core-5y5r.onrender.com/auth"
+from frontend.api_client import login_user, register_user
 
 
 def is_logged_in() -> bool:
+    """Return True if a bearer token is present in session state."""
     return bool(st.session_state.get("token"))
 
 
 def get_token() -> str | None:
-    """For saved_list requests: Authorization: Bearer {get_token()}"""
-    return st.session_state.get("token")
+    """Return the active bearer token for authenticated requests."""
+    token = st.session_state.get("token")
+    return str(token) if token else None
 
 
 def get_username() -> str | None:
-    return st.session_state.get("username")
+    """Return the logged-in user's username."""
+    username = st.session_state.get("username")
+    return str(username) if username else None
 
 
-def _do_login(username: str, password: str):
-    # /auth/login expects OAuth2PasswordRequestForm -> form-encoded, not JSON
-    response = requests.post(
-        f"{API_URL_AUTH}/login",
-        data={"username": username, "password": password},
-        timeout=15,
-    )
-    data = response.json()
-    if response.status_code != 200:
-        st.error(data.get("detail", "Login failed."))
+def _clear_user_session() -> None:
+    st.session_state["token"] = None
+    st.session_state["username"] = None
+    st.session_state.pop("saved_list_cache", None)
+
+
+def _do_login(username: str, password: str) -> None:
+    result = login_user(username.strip(), password)
+    if not result.ok:
+        st.error(result.error or "Login failed.")
         return
 
-    st.session_state["token"] = data["access_token"]
-    st.session_state["username"] = username
+    _clear_user_session()
+    st.session_state.pop("session_expired_notice", None)
+    st.session_state["token"] = result.data["access_token"]
+    st.session_state["username"] = username.strip()
     st.rerun()
 
 
-def _do_register(username: str, password: str):
-    # /auth/register expects a plain JSON body (UserSchema)
-    response = requests.post(
-        f"{API_URL_AUTH}/register",
-        json={"username": username, "password": password},
-        timeout=15,
-    )
-    data = response.json()
-    if response.status_code != 200:
-        st.error(data.get("detail", "Registration failed."))
+def _do_register(username: str, password: str) -> None:
+    cleaned_username = username.strip()
+    if len(cleaned_username) < 3 or len(cleaned_username) > 50:
+        st.warning("Username must be between 3 and 50 characters.")
+        return
+    if len(password) < 8 or len(password) > 128:
+        st.warning("Password must be between 8 and 128 characters.")
+        return
+
+    result = register_user(cleaned_username, password)
+    if not result.ok:
+        st.error(result.error or "Registration failed.")
         return
 
     st.success("Account created. Log in below.")
@@ -51,54 +62,59 @@ def _do_register(username: str, password: str):
     st.rerun()
 
 
-def _do_logout():
-    st.session_state["token"] = None
-    st.session_state["username"] = None
+def _do_logout() -> None:
+    _clear_user_session()
     st.rerun()
 
 
-def render_auth_sidebar():
-    """Call this once near the top of the app. Renders login/register/logout
-    in the sidebar. Session-only: token is lost on a hard refresh (accepted
-    trade-off for v1 — no browser-storage dependency to fight with)."""
+def render_auth_sidebar() -> None:
+    """Render login/register/logout controls in the Streamlit sidebar."""
     with st.sidebar:
+        expired_notice = st.session_state.pop("session_expired_notice", None)
+        if expired_notice:
+            st.warning(expired_notice)
+
         if is_logged_in():
             st.markdown(f"Logged in as **{get_username()}**")
             if st.button("Log out", use_container_width=True):
                 _do_logout()
-        else:
-            st.markdown("### Account")
-            if "auth_mode" not in st.session_state:
+            return
+
+        st.markdown("### Account")
+        if "auth_mode" not in st.session_state:
+            st.session_state["auth_mode"] = "login"
+
+        mode_col1, mode_col2 = st.columns(2)
+        with mode_col1:
+            if st.button(
+                "Login",
+                use_container_width=True,
+                type="primary" if st.session_state["auth_mode"] == "login" else "secondary",
+            ):
                 st.session_state["auth_mode"] = "login"
+        with mode_col2:
+            if st.button(
+                "Register",
+                use_container_width=True,
+                type="primary" if st.session_state["auth_mode"] == "register" else "secondary",
+            ):
+                st.session_state["auth_mode"] = "register"
 
-            mode_col1, mode_col2 = st.columns(2)
-            with mode_col1:
-                if st.button(
-                    "Login",
-                    use_container_width=True,
-                    type="primary" if st.session_state["auth_mode"] == "login" else "secondary",
-                ):
-                    st.session_state["auth_mode"] = "login"
-            with mode_col2:
-                if st.button(
-                    "Register",
-                    use_container_width=True,
-                    type="primary" if st.session_state["auth_mode"] == "register" else "secondary",
-                ):
-                    st.session_state["auth_mode"] = "register"
+        username = st.text_input("Username", key="auth_username")
+        password = st.text_input("Password", type="password", key="auth_password")
 
-            username = st.text_input("Username", key="auth_username")
-            password = st.text_input("Password", type="password", key="auth_password")
-
-            if st.session_state["auth_mode"] == "login":
-                if st.button("Log in", use_container_width=True):
-                    if not username or not password:
-                        st.warning("Enter both username and password.")
-                    else:
-                        _do_login(username, password)
-            else:
-                if st.button("Create account", use_container_width=True):
-                    if not username or not password:
-                        st.warning("Enter both username and password.")
-                    else:
-                        _do_register(username, password)
+        if st.session_state["auth_mode"] == "login":
+            if st.button("Log in", use_container_width=True):
+                if not username or not password:
+                    st.warning("Enter both username and password.")
+                else:
+                    _do_login(username, password)
+        else:
+            st.caption(
+                "Username: 3-50 chars (letters, digits, '.', '_', '-'). Password: 8-128 chars."
+            )
+            if st.button("Create account", use_container_width=True):
+                if not username or not password:
+                    st.warning("Enter both username and password.")
+                else:
+                    _do_register(username, password)
