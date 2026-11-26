@@ -16,7 +16,8 @@ CoRe is an MHT-CET engineering college recommendation and cutoff-analytics appli
 | Backend | FastAPI, Pydantic v2, `pydantic-settings` |
 | ORM & Driver | SQLAlchemy 2.x async ORM, `asyncmy` |
 | Migrations | Alembic |
-| Database | MySQL (Aiven in production) |
+| Database | MySQL (Google Cloud SQL for production) |
+| Hosting & Secrets | Google Cloud Run, Artifact Registry, Secret Manager |
 | Frontend | Streamlit, Altair |
 | ETL | Python, `mysql-connector-python` (batch) |
 | Tooling | `uv`, `pytest`, `ruff`, `pyright` |
@@ -42,22 +43,32 @@ Copy `backend\.env.example` to `backend\.env` and fill in your database credenti
 Copy-Item backend\.env.example backend\.env
 ```
 
-### 3. Run the Backend
+### 3. Initialize a Fresh Database (Local or Cloud SQL)
+
+```powershell
+uv run alembic -c backend/alembic.ini upgrade head
+uv run python etl/loader.py
+```
+
+> Note: `PDFs/`, `csvs/`, and `cutoffs_flat.csv` are gitignored and must be present locally before running `etl/loader.py`.
+
+### 4. Run the Backend
 
 ```powershell
 uv run uvicorn backend.main:app --reload
 ```
 
-### 4. Run the Frontend (separate terminal)
+### 5. Run the Frontend (separate terminal)
 
 ```powershell
 uv run streamlit run frontend/ui.py
 ```
 
-### 5. Run Checks & Tests
+### 6. Run Checks & Tests
 
 ```powershell
-uv run ruff check backend
+uv run ruff check .
+uv run ruff format --check .
 uv run pyright
 uv run pytest -v
 ```
@@ -65,7 +76,8 @@ uv run pytest -v
 To run MySQL integration tests against an isolated test database:
 
 ```powershell
-$env:CORE_TEST_DATABASE_URL = "mysql+asyncmy://user:password@localhost:3306/core_test"
+$env:CORE_TEST_DATABASE_URL = "mysql+asyncmy://root:password@127.0.0.1:3306/core_test"
+$env:CORE_TEST_ALLOW_DESTRUCTIVE = "1"
 uv run pytest -v
 ```
 
