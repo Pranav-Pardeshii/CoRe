@@ -383,17 +383,57 @@ GitHub Actions ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs four 
 
 ## Deployment & Containerization
 
-The repository includes a multi-stage non-root [Dockerfile](Dockerfile) for the backend API (`--workers 1`, installing only runtime dependencies via `uv sync --frozen --no-dev --no-install-project`) and configuration designed for **Google Cloud Run + Cloud SQL for MySQL 8.0**:
+CoRe is live at **[core-frontend-six.vercel.app](https://core-frontend-six.vercel.app)**, deployed on the following free-tier stack:
+
+| Component | Service | Notes |
+|---|---|---|
+| Frontend SPA | **Vercel Hobby** | Root directory `frontend/`, Vite preset, `VITE_API_BASE_URL` env var |
+| Backend API | **Render Free Web Service** | Docker runtime using [`Dockerfile`](Dockerfile), `--workers 1` |
+| Database | **TiDB Cloud Starter** | MySQL-compatible, `5 GiB` free, connects via TCP TLS (`CORE_DB_SSL_CA=ca.pem`) |
+| Keep-Alive | **cron-job.org** | `GET /health/live` every 10 minutes to prevent Render's 15-minute idle sleep |
+
+### Local Docker Build
 
 ```powershell
 docker build -t core-backend .
 ```
 
-- **Database Transport**: Configure `CORE_DB_UNIX_SOCKET=/cloudsql/<PROJECT>:<REGION>:<INSTANCE>` (leaving `CORE_DB_HOST` unset) for Cloud SQL Unix sockets, or `CORE_DB_HOST` + `CORE_DB_SSL_CA` for verified TCP TLS.
-- **Connection Pool Sizing**: With default `CORE_DB_POOL_SIZE=2` and `CORE_DB_MAX_OVERFLOW=3`, each single-worker Cloud Run instance uses at most 5 MySQL connections; size `--max-instances` so `max_instances * 5` leaves headroom for Alembic migrations and ETL jobs.
-- **Proxy & Logging**: Set `CORE_TRUSTED_PROXY_HOPS=1` behind Cloud Run's Google Front End so `X-Forwarded-For` resolves per-client IPs, and set `CORE_GCP_PROJECT_ID` to emit Cloud Logging trace correlation fields.
+### Render (Backend) Configuration
 
-> **Deployment status:** Container packaging, Unix-socket database support, Cloud Logging formatting, and proxy-hop extraction are implemented in the repository; Terraform/Cloud Build deployment manifests and separate frontend static hosting config are not included in this repository.
+The [`Dockerfile`](Dockerfile) is multi-stage, runs as a non-root user, and listens on `$PORT` (default `8080`). Key environment variables for Render:
+
+- `CORE_ENVIRONMENT=production` — enforces `CORE_SECRET_KEY` ≥ 32 chars and rejects `*` in `CORE_CORS_ORIGINS`.
+- `CORE_TRUSTED_PROXY_HOPS=1` — resolves per-client IPs from Render's proxy `X-Forwarded-For`.
+- `CORE_DB_HOST` / `CORE_DB_PORT=4000` / `CORE_DB_SSL_CA=/etc/secrets/ca.pem` — TiDB Cloud Starter TCP TLS connection.
+- Upload `ca.pem` as a **Render Secret File** (mounted at `/etc/secrets/ca.pem`).
+- Set Health Check Path to `/health/live`.
+
+### TiDB Cloud Starter (Database)
+
+TiDB Cloud Starter is MySQL-compatible and always free (no credit card, `5 GiB` row storage, `50M` Request Units/month). The ETL `ON DUPLICATE KEY UPDATE` syntax uses `VALUES(col)` for compatibility with both TiDB and MySQL 8.0.
+
+To migrate and load data into TiDB from Windows (uses `WindowsSelectorEventLoopPolicy` to work around a Windows `asyncmy` + TLS incompatibility with `ProactorEventLoop`):
+
+```powershell
+# 1. Set env to point at TiDB (or update backend/.env)
+$env:CORE_DB_SSL_CA = "./ca.pem"
+
+# 2. Run Alembic migrations
+uv run python -c "import asyncio; asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy()); from alembic.config import main; main(['-c', 'backend/alembic.ini', 'upgrade', 'head'])"
+
+# 3. Load cutoff data (277,424 rows across 386 colleges and 2,371 branches)
+uv run python -m etl load
+```
+
+### Vercel (Frontend) Configuration
+
+- **Root Directory:** `frontend`
+- **Framework Preset:** Vite (Build Command `npm run build`, Output Directory `dist`)
+- **Environment Variable:** `VITE_API_BASE_URL=https://<your-render-url>.onrender.com` (no trailing slash)
+
+After deploying, update `CORE_CORS_ORIGINS` on Render to `["https://<your-vercel-domain>.vercel.app"]`.
+
+> **Note:** `ca.pem` and `backend/.env` are gitignored and must be supplied manually in each deployment environment.
 
 ---
 
@@ -410,7 +450,7 @@ docker build -t core-backend .
 
 - **No Guest Shortlist Persistence**: Unlike the draft proposal in `frontend/PRODUCT.md`, the implemented React shortlist requires an authenticated account (`/saved-lists/`); unauthenticated visitors are prompted to sign in or register.
 - **Stage I Focus**: `/recommender/` and `/trends/` intentionally filter `admission_stage == "I"` cutoffs, and `/trends/` maps `"All"` category queries to `"GOPENS"`.
-- **Uncommitted / Gitignored Data Artifacts**: Source CAP PDFs (`PDFs/`), intermediate CSVs (`csvs/`), `cutoffs_flat.csv`, `.env` files, and `ca.pem` are gitignored; a fresh clone starts with an empty schema until ETL is executed locally.
+- **Uncommitted / Gitignored Data Artifacts**: Source CAP PDFs (`PDFs/`), intermediate CSVs (`csvs/`), `cutoffs_flat.csv`, `.env` files, and `ca.pem` are gitignored; a fresh clone starts with an empty schema until ETL is executed locally against an external database (see [Deployment](#deployment--containerization)).
 - **Legacy References in `docs/`**: While `README.md` and `.github/workflows/ci.yml` reflect the React 19 + Vite frontend, several files under `docs/` (`API.md`, `PRD.md`, `PROGRESS.md`, `TESTING.md`) still mention the retired Streamlit prototype.
 
 ---

@@ -23,19 +23,19 @@ DEFAULT_BATCH_SIZE = 2000
 
 UPSERT_COLLEGES_SQL = """
 INSERT INTO colleges (college_code, college_name, status, division)
-VALUES (%s, %s, %s, %s) AS new
+VALUES (%s, %s, %s, %s)
 ON DUPLICATE KEY UPDATE
-    college_name = new.college_name,
-    status = new.status,
-    division = new.division
+    college_name = VALUES(college_name),
+    status = VALUES(status),
+    division = VALUES(division)
 """
 
 UPSERT_BRANCHES_SQL = """
 INSERT INTO branches (branch_code, branch_name, college_code)
-VALUES (%s, %s, %s) AS new
+VALUES (%s, %s, %s)
 ON DUPLICATE KEY UPDATE
-    branch_name = new.branch_name,
-    college_code = new.college_code
+    branch_name = VALUES(branch_name),
+    college_code = VALUES(college_code)
 """
 
 UPSERT_CUTOFFS_SQL = """
@@ -49,10 +49,10 @@ INSERT INTO admission_cutoffs (
     merit_rank,
     percentile
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s) AS new
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 ON DUPLICATE KEY UPDATE
-    merit_rank = new.merit_rank,
-    percentile = new.percentile
+    merit_rank = VALUES(merit_rank),
+    percentile = VALUES(percentile)
 """
 
 

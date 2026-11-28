@@ -115,7 +115,7 @@ def test_load_chunks_executemany_and_logs_counts(
     ]
     assert [len(call.args[1]) for call in cutoff_calls] == [2, 2, 1]
     assert mock_conn.commit.call_count == 5  # 1 colleges + 1 branches + 3 cutoffs
-    assert "AS new" in UPSERT_CUTOFFS_SQL
+    assert "VALUES(percentile)" in UPSERT_CUTOFFS_SQL
 
 
 def test_prepare_records_preserves_decimal_precision() -> None:
